@@ -1,3 +1,4 @@
+# imageditor/config.py
 from .editors.editors import CropEditor, FilterEditor, ResizeEditor, RotateEditor, SubtitleEditor, WatermarkEditor
 
 # Define all tools and their configuration for the UI and backend logic
@@ -6,6 +7,7 @@ from .editors.editors import CropEditor, FilterEditor, ResizeEditor, RotateEdito
 # UI element types: 'slider', 'number', 'text', 'select', 'checkbox', 'button', 'color'
 EDITOR_TOOLS = {
     "filter": {
+        # ... (Filter tool config remains unchanged)
         "name": "Filters & Enhancement",
         "editor_class": FilterEditor,
         "options": [
@@ -13,9 +15,9 @@ EDITOR_TOOLS = {
                 "id": "filter",
                 "label": "Select Filter",
                 "type": "select",
-                "default": "none", # UPDATED: Default is now 'none'
+                "default": "none",
                 "choices": [
-                    {"value": "none", "label": "None"}, # ADDED: The neutral option
+                    {"value": "none", "label": "None"},
                     {"value": "grayscale", "label": "Grayscale"},
                     {"value": "invert", "label": "Invert Colors"},
                     {"value": "sepia", "label": "Sepia Tone"},
@@ -33,7 +35,7 @@ EDITOR_TOOLS = {
                 "min": 0.0,
                 "max": 5.0,
                 "step": 0.1,
-                "default": 1.0, # Neutral factor is usually 1.0
+                "default": 1.0,
                 "applies_to": ["brighten", "contrast", "sepia"]
             },
             {
@@ -43,7 +45,7 @@ EDITOR_TOOLS = {
                 "min": 0,
                 "max": 10,
                 "step": 1,
-                "default": 0, # Neutral radius is 0
+                "default": 0,
                 "applies_to": ["blur"]
             },
         ]
@@ -52,6 +54,18 @@ EDITOR_TOOLS = {
         "name": "Rotate",
         "editor_class": RotateEditor,
         "options": [
+            # NEW: Preset buttons for quick rotation
+            {
+                "id": "presets",
+                "label": "Quick Rotation Presets",
+                "type": "button-group", # Custom type for button group
+                "buttons": [
+                    {"value": 90, "label": "90°"},
+                    {"value": 180, "label": "180°"},
+                    {"value": 270, "label": "270°"},
+                ]
+            },
+            # Existing Angle slider
             {
                 "id": "angle",
                 "label": "Angle (°)",
@@ -64,6 +78,7 @@ EDITOR_TOOLS = {
         ]
     },
     "resize": {
+        # ... (Resize tool config remains unchanged)
         "name": "Resize",
         "editor_class": ResizeEditor,
         "options": [
@@ -72,18 +87,19 @@ EDITOR_TOOLS = {
                 "label": "New Width",
                 "type": "number",
                 "min": 1,
-                "default": 0, # UPDATED: Placeholder '0', will be set by JS
+                "default": 0,
             },
             {
                 "id": "height",
                 "label": "New Height",
                 "type": "number",
                 "min": 1,
-                "default": 0, # UPDATED: Placeholder '0', will be set by JS
+                "default": 0,
             },
         ]
     },
     "subtitle": {
+        # ... (Subtitle tool config remains unchanged)
         "name": "Add Text/Subtitle",
         "editor_class": SubtitleEditor,
         "options": [
@@ -91,7 +107,7 @@ EDITOR_TOOLS = {
                 "id": "text",
                 "label": "Text",
                 "type": "text",
-                "default": "", # UPDATED: Set to empty string
+                "default": "",
             },
             {
                 "id": "font_size",
@@ -113,7 +129,7 @@ EDITOR_TOOLS = {
                 "type": "number",
                 "min": 0,
                 "max": 10,
-                "default": 0, # UPDATED: Neutral default is 0
+                "default": 0,
             },
             {
                 "id": "align",

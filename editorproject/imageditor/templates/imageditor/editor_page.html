@@ -144,6 +144,29 @@
             color: var(--primary-color);
         }
 
+        /* NEW STYLES for Button Group */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .button-group .preset-btn {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid var(--secondary-color);
+            border-radius: 4px;
+            background-color: #fff;
+            color: var(--secondary-color);
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            font-size: 0.9em;
+        }
+        .button-group .preset-btn:hover {
+            background-color: #f0f0f5;
+            border-color: var(--primary-color);
+        }
+        /* END NEW STYLES */
+
         .action-buttons {
             padding-top: 20px;
             border-top: 1px solid #ddd;
@@ -365,6 +388,37 @@
                     });
                     input.addEventListener('change', handlePreviewUpdate); // Change event for selects
                     break;
+                case 'button-group': // CASE for Preset Buttons
+                    group.appendChild(label); // Keep the label for the group
+                    const buttonGroupDiv = document.createElement('div');
+                    buttonGroupDiv.className = 'button-group';
+
+                    option.buttons.forEach(btnConfig => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'preset-btn';
+                        btn.textContent = btnConfig.label;
+                        btn.setAttribute('data-angle', btnConfig.value);
+
+                        btn.addEventListener('click', () => {
+                            // Find the main angle slider/input and its display span
+                            const angleInput = toolSettingsDiv.querySelector('#angle');
+                            const valueDisplay = toolSettingsDiv.querySelector('#angle').closest('.setting-group').querySelector('.input-range-value');
+                            const angleValue = parseInt(btn.getAttribute('data-angle'));
+
+                            if (angleInput) {
+                                angleInput.value = angleValue;
+                                // Update the visual display text (FIXED)
+                                if (valueDisplay) {
+                                    valueDisplay.textContent = angleValue;
+                                }
+                                handlePreviewUpdate(); // Trigger the preview with the new angle
+                            }
+                        });
+                        buttonGroupDiv.appendChild(btn);
+                    });
+                    group.appendChild(buttonGroupDiv);
+                    return group; // Return the entire group for button-group type
                 default:
                     return null;
             }
@@ -396,7 +450,6 @@
                 updateToolDefault('resize', 'width', currentImageWidth);
                 updateToolDefault('resize', 'height', currentImageHeight);
             }
-            // Note: Filter and Subtitle defaults are handled by the static config update
 
             // 2. Clear and Render
             toolSettingsDiv.innerHTML = '';
@@ -505,17 +558,14 @@
             if (!workingFilePath || !previewFilePath || !currentToolKey) return;
 
             // OPTIMIZATION: Check if the tool is "resize" and values match current dimensions.
-            // If so, and we are viewing the working copy, skip the preview request.
             if (currentToolKey === 'resize') {
                 const widthInput = document.getElementById('width');
                 const heightInput = document.getElementById('height');
 
-                // If the inputs exist and their values match the current image state, skip preview
                 if (widthInput && heightInput) {
                     const currentW = parseInt(widthInput.value);
                     const currentH = parseInt(heightInput.value);
                     if (currentW === currentImageWidth && currentH === currentImageHeight) {
-                        // If the user hasn't changed the default resize value, don't re-process.
                         return;
                     }
                 }
