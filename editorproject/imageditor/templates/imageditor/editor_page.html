@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Editor 2025</title>
     <style>
-        /* ... (CSS remains unchanged) ... */
-
         :root {
             --primary-color: #007bff;
             --secondary-color: #6c757d;
@@ -238,11 +236,14 @@
 
         let currentImageFile = null;
         let originalImageURL = null;
+
+        // CRITICAL: Stores the immutable path of the original uploaded file (Task 2 & 3)
         let originalFilePath = null;
+
+        // CRITICAL: Stores the path of the current, editable working copy (Task 2 & 3)
         let currentFilePath = null;
         let currentToolKey = null;
 
-        // CRITICAL FIX: Use the new variable name for JS consumption
         const EDITOR_TOOLS = JSON.parse('{{ js_editor_tools|safe }}'.replace(/&quot;/g, '"'));
 
         // --- Utility Functions ---
@@ -415,8 +416,9 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    currentFilePath = data.file_path;
-                    originalFilePath = data.file_path;
+                    // CRITICAL UPDATE: Capture both paths from the server
+                    originalFilePath = data.original_file_path;
+                    currentFilePath = data.working_file_path;
 
                     uploadPrompt.classList.add('hidden');
                     previewImage.style.display = 'block';
@@ -443,12 +445,14 @@
         }
 
 
+        // UPDATED: applyEdit now performs the COMMIT/APPLY operation, saving changes to currentFilePath.
         async function applyEdit() {
             if (!currentFilePath || !currentToolKey) return;
 
             loadingOverlay.style.display = 'flex';
 
             const formData = new FormData();
+            // We use currentFilePath as the source and destination for the commit
             formData.append('current_file_path', currentFilePath);
             formData.append('tool_key', currentToolKey);
 
@@ -468,6 +472,7 @@
             formData.append('options', JSON.stringify(options));
 
             try {
+                // process_image now reads the working copy, edits it, and overwrites the working copy.
                 const response = await fetch('{% url "process_image" %}', {
                     method: 'POST',
                     headers: {
@@ -479,8 +484,10 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    previewImage.src = data.temp_image_url;
+                    // Add a cache buster to force the browser to reload the image from the same path
+                    previewImage.src = data.temp_image_url + '?' + new Date().getTime();
                     currentFilePath = data.file_path;
+
                     applyButton.disabled = false;
                 } else {
                     alert('Error: ' + data.error);
@@ -494,16 +501,42 @@
         }
 
 
-        function resetImage() {
-             if (originalFilePath) {
-                currentFilePath = originalFilePath;
+        // UPDATED: resetImage now calls the dedicated backend endpoint to create a fresh copy (Task 3).
+        async function resetImage() {
+             if (!originalFilePath) return;
 
-                const originalURL = previewImage.src.replace(currentFilePath.split('/').pop(), originalFilePath.split('/').pop());
+             loadingOverlay.style.display = 'flex';
 
-                previewImage.src = originalURL;
+             const formData = new FormData();
+             formData.append('original_file_path', originalFilePath);
+             formData.append('working_file_path', currentFilePath);
 
-                alert("Image preview state reset to the original upload.");
-                applyButton.disabled = true;
+             try {
+                const response = await fetch('{% url "reset_image_state" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentFilePath = data.working_file_path;
+                    // Add a cache buster to ensure the browser loads the new image copy
+                    previewImage.src = data.temp_image_url + '?' + new Date().getTime();
+
+                    alert("Image preview state reset to the original upload (new working copy created).");
+                    applyButton.disabled = true;
+                } else {
+                    alert('Reset Error: ' + data.error);
+                }
+             } catch (error) {
+                 console.error('Reset fetch error:', error);
+                 alert('An unexpected error occurred during reset.');
+             } finally {
+                loadingOverlay.style.display = 'none';
              }
         }
 
@@ -529,6 +562,7 @@
 
         downloadButton.addEventListener('click', () => {
             if (currentFilePath) {
+                // Download uses the current working file path
                 window.location.href = `{% url "download_image" %}?file_path=${currentFilePath}`;
             } else {
                 alert("No image is currently available for download.");
