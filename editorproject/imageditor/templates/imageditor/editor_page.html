@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Editor 2025</title>
+    <style>
+        /* ... (CSS remains unchanged) ... */
+
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --bg-light: #f4f4f7;
+            --bg-dark: #ffffff;
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: #333;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .editor-layout {
+            display: flex;
+            width: 90vw;
+            height: 90vh;
+            background-color: var(--bg-dark);
+            box-shadow: var(--shadow-md);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        /* LEFT SIDE: Preview & Upload (2/3 width) */
+        .preview-area {
+            flex: 2;
+            position: relative;
+            background-color: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #image-upload {
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 5;
+        }
+
+        .upload-prompt {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border: 3px dashed var(--secondary-color);
+            border-radius: var(--border-radius);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--secondary-color);
+            pointer-events: none;
+            transition: border-color 0.3s;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .upload-prompt.hidden { display: none; }
+        .upload-prompt p { font-size: 1.1em; }
+
+        #preview-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+            z-index: 1;
+        }
+
+        /* RIGHT SIDE: Tools and Settings (1/3 width) */
+        .settings-panel {
+            flex: 1;
+            background-color: var(--bg-light);
+            border-left: 1px solid #ddd;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .tool-list {
+            margin-bottom: 20px;
+        }
+        .tool-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border: none;
+            border-radius: var(--border-radius);
+            background-color: var(--bg-dark);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .tool-button:hover { background-color: #f0f0f5; }
+        .tool-button.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+        }
+
+        .settings-content {
+            flex-grow: 1;
+        }
+        .setting-group {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .setting-group:last-child { border-bottom: none; }
+        .setting-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .setting-group input[type="range"] {
+            width: 100%;
+            margin: 8px 0;
+        }
+        .input-range-value {
+            float: right;
+            font-weight: normal;
+            color: var(--primary-color);
+        }
+
+        .action-buttons {
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .action-buttons button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+        .action-buttons button:disabled { opacity: 0.5; cursor: default; }
+
+        .apply-btn { background-color: var(--success-color); color: white; }
+        .reset-btn { background-color: var(--secondary-color); color: white; }
+        .download-btn { background-color: var(--primary-color); color: white; }
+
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            color: var(--primary-color);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-layout">
+        <div class="preview-area" id="preview-area">
+            <input type="file" id="image-upload" accept="image/*">
+
+            <div class="upload-prompt" id="upload-prompt">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" viewBox="0 0 16 16" style="margin-bottom: 10px;">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a.5.5 0 0 0 .5.5h12a.5.5 0 0 0 .5-.5v-2.5a.5.5 0 0 1 1 0v2.5a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 0 12.9v-2.5a.5.5 0 0 1 .5-.5"/>
+                    <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V10.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z"/>
+                </svg>
+                <h3>Drop Image Here</h3>
+                <p>or click anywhere in this box to upload.</p>
+            </div>
+
+            <img id="preview-image" alt="Image Preview">
+            <div class="loading" id="loading-overlay">Processing...</div>
+        </div>
+
+        <div class="settings-panel">
+            <div class="tool-list">
+                <h3>Select Tool</h3>
+                {% for key, tool in template_tools.items %}
+                    <button class="tool-button" data-tool-key="{{ key }}">{{ tool.name }}</button>
+                {% endfor %}
+            </div>
+
+            <div class="settings-content">
+                <h4 id="settings-title">Tool Settings</h4>
+                <div id="tool-settings">
+                    <p>Upload an image and select a tool to start.</p>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="apply-button" class="apply-btn" disabled>Apply Changes</button>
+                <button id="reset-button" class="reset-btn" disabled>Reset Preview</button>
+                <button id="download-button" class="download-btn" disabled>Download Image</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('image-upload');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const previewImage = document.getElementById('preview-image');
+        const previewArea = document.getElementById('preview-area');
+        const toolButtons = document.querySelectorAll('.tool-button');
+        const settingsTitle = document.getElementById('settings-title');
+        const toolSettingsDiv = document.getElementById('tool-settings');
+        const applyButton = document.getElementById('apply-button');
+        const resetButton = document.getElementById('reset-button');
+        const downloadButton = document.getElementById('download-button');
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        let currentImageFile = null;
+        let originalImageURL = null;
+        let originalFilePath = null;
+        let currentFilePath = null;
+        let currentToolKey = null;
+
+        // CRITICAL FIX: Use the new variable name for JS consumption
+        const EDITOR_TOOLS = JSON.parse('{{ js_editor_tools|safe }}'.replace(/&quot;/g, '"'));
+
+        // --- Utility Functions ---
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        function createSettingInput(option) {
+            const group = document.createElement('div');
+            group.className = 'setting-group';
+            if (option.hasOwnProperty('applies_to')) {
+                group.setAttribute('data-applies-to', option.applies_to.join(','));
+                group.style.display = 'none';
+            }
+
+            const label = document.createElement('label');
+            label.setAttribute('for', option.id);
+            label.textContent = option.label;
+
+            let input;
+
+            switch (option.type) {
+                case 'slider':
+                    input = document.createElement('input');
+                    input.type = 'range';
+                    input.id = option.id;
+                    input.name = option.id;
+                    input.min = option.min || 0;
+                    input.max = option.max || 100;
+                    input.step = option.step || 1;
+                    input.value = option.default;
+
+                    const valueDisplay = document.createElement('span');
+                    valueDisplay.className = 'input-range-value';
+                    valueDisplay.textContent = input.value;
+                    label.appendChild(valueDisplay);
+
+                    input.addEventListener('input', (e) => {
+                        valueDisplay.textContent = e.target.value;
+                    });
+                    break;
+                case 'number':
+                    input = document.createElement('input');
+                    input.type = 'number';
+                    input.id = option.id;
+                    input.name = option.id;
+                    input.min = option.min || 1;
+                    if (option.hasOwnProperty('max')) input.max = option.max;
+                    input.value = option.default;
+                    break;
+                case 'text':
+                    input = document.createElement('textarea');
+                    input.id = option.id;
+                    input.name = option.id;
+                    input.value = option.default;
+                    break;
+                case 'color':
+                    input = document.createElement('input');
+                    input.type = 'color';
+                    input.id = option.id;
+                    input.name = option.id;
+                    input.value = option.default;
+                    break;
+                case 'checkbox':
+                    input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.id = option.id;
+                    input.name = option.id;
+                    input.checked = option.default;
+                    break;
+                case 'select':
+                    input = document.createElement('select');
+                    input.id = option.id;
+                    input.name = option.id;
+                    option.choices.forEach(choice => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = choice.value;
+                        optionElement.textContent = choice.label;
+                        if (choice.value === option.default) {
+                            optionElement.selected = true;
+                        }
+                        input.appendChild(optionElement);
+                    });
+                    break;
+                default:
+                    return null;
+            }
+
+            group.appendChild(label);
+            group.appendChild(input);
+            return group;
+        }
+
+        // --- Core Logic ---
+
+        function renderSettings(toolKey) {
+            currentToolKey = toolKey;
+            toolSettingsDiv.innerHTML = '';
+
+            const toolConfig = EDITOR_TOOLS[toolKey];
+            settingsTitle.textContent = toolConfig.name + " Settings";
+
+            let filterSelect = null;
+
+            toolConfig.options.forEach(option => {
+                const inputGroup = createSettingInput(option);
+                if (inputGroup) {
+                    toolSettingsDiv.appendChild(inputGroup);
+
+                    if (option.id === 'filter' && option.type === 'select') {
+                        filterSelect = inputGroup.querySelector('select');
+                    }
+                }
+            });
+
+            if (filterSelect) {
+                updateDynamicSettings(filterSelect.value);
+                filterSelect.addEventListener('change', (e) => {
+                    updateDynamicSettings(e.target.value);
+                });
+            }
+        }
+
+        function updateDynamicSettings(currentFilterValue) {
+            const dynamicSettings = toolSettingsDiv.querySelectorAll('.setting-group[data-applies-to]');
+
+            dynamicSettings.forEach(group => {
+                const appliesTo = group.getAttribute('data-applies-to').split(',');
+                const shouldShow = appliesTo.includes(currentFilterValue);
+                group.style.display = shouldShow ? 'block' : 'none';
+
+                if (shouldShow && group.querySelector('input[type="range"]')) {
+                     const rangeInput = group.querySelector('input[type="range"]');
+                     const valueDisplay = group.querySelector('.input-range-value');
+                     if (valueDisplay) {
+                        valueDisplay.textContent = rangeInput.value;
+                     }
+                }
+            });
+        }
+
+        async function handleInitialUpload(file) {
+            loadingOverlay.style.display = 'flex';
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('{% url "initial_upload" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentFilePath = data.file_path;
+                    originalFilePath = data.file_path;
+
+                    uploadPrompt.classList.add('hidden');
+                    previewImage.style.display = 'block';
+                    previewImage.src = data.temp_image_url;
+
+                    resetButton.disabled = false;
+                    downloadButton.disabled = false;
+
+                    toolButtons.forEach(btn => btn.classList.remove('active'));
+                    settingsTitle.textContent = "Select a Tool";
+                    toolSettingsDiv.innerHTML = '<p>Select a tool on the left to adjust settings.</p>';
+                    applyButton.disabled = true;
+                    currentToolKey = null;
+
+                } else {
+                    alert('Upload Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Initial upload fetch error:', error);
+                alert('An unexpected error occurred during initial upload.');
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+
+        async function applyEdit() {
+            if (!currentFilePath || !currentToolKey) return;
+
+            loadingOverlay.style.display = 'flex';
+
+            const formData = new FormData();
+            formData.append('current_file_path', currentFilePath);
+            formData.append('tool_key', currentToolKey);
+
+            const options = {};
+            const settingInputs = toolSettingsDiv.querySelectorAll('input, select, textarea');
+
+            settingInputs.forEach(input => {
+                let value;
+                if (input.type === 'checkbox') {
+                    value = input.checked;
+                } else {
+                    value = input.value;
+                }
+                options[input.name] = value;
+            });
+
+            formData.append('options', JSON.stringify(options));
+
+            try {
+                const response = await fetch('{% url "process_image" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    previewImage.src = data.temp_image_url;
+                    currentFilePath = data.file_path;
+                    applyButton.disabled = false;
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('An unexpected error occurred during processing.');
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+
+        function resetImage() {
+             if (originalFilePath) {
+                currentFilePath = originalFilePath;
+
+                const originalURL = previewImage.src.replace(currentFilePath.split('/').pop(), originalFilePath.split('/').pop());
+
+                previewImage.src = originalURL;
+
+                alert("Image preview state reset to the original upload.");
+                applyButton.disabled = true;
+             }
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // 1. Tool Selection
+        toolButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (!currentFilePath) {
+                    alert("Please upload an image first.");
+                    return;
+                }
+                toolButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                renderSettings(button.dataset.toolKey);
+                applyButton.disabled = false;
+            });
+        });
+
+        // 2. Main Action Buttons
+        applyButton.addEventListener('click', applyEdit);
+        resetButton.addEventListener('click', resetImage);
+
+        downloadButton.addEventListener('click', () => {
+            if (currentFilePath) {
+                window.location.href = `{% url "download_image" %}?file_path=${currentFilePath}`;
+            } else {
+                alert("No image is currently available for download.");
+            }
+        });
+
+
+        // 3. Image Upload (Handles Clicks and Native Drops)
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                currentImageFile = file;
+                handleInitialUpload(file);
+            }
+        });
+
+        // 4. Drag-and-Drop Visual Feedback (using correct hex values)
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            previewArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            previewArea.addEventListener(eventName, () => {
+                uploadPrompt.style.borderColor = '#007bff';
+                uploadPrompt.style.color = '#007bff';
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            previewArea.addEventListener(eventName, () => {
+                uploadPrompt.style.borderColor = '#6c757d';
+                uploadPrompt.style.color = '#6c757d';
+            }, false);
+        });
+
+        previewArea.addEventListener('drop', (e) => {
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                currentImageFile = file;
+                handleInitialUpload(file);
+            }
+        }, false);
+
+    </script>
+</body>
+</html>
