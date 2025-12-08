@@ -13,8 +13,9 @@ EDITOR_TOOLS = {
                 "id": "filter",
                 "label": "Select Filter",
                 "type": "select",
-                "default": "grayscale",
+                "default": "none", # UPDATED: Default is now 'none'
                 "choices": [
+                    {"value": "none", "label": "None"}, # ADDED: The neutral option
                     {"value": "grayscale", "label": "Grayscale"},
                     {"value": "invert", "label": "Invert Colors"},
                     {"value": "sepia", "label": "Sepia Tone"},
@@ -32,8 +33,8 @@ EDITOR_TOOLS = {
                 "min": 0.0,
                 "max": 5.0,
                 "step": 0.1,
-                "default": 1.5,
-                "applies_to": ["brighten", "contrast", "sepia"] # Only show for these filters
+                "default": 1.0, # Neutral factor is usually 1.0
+                "applies_to": ["brighten", "contrast", "sepia"]
             },
             {
                 "id": "radius",
@@ -42,7 +43,7 @@ EDITOR_TOOLS = {
                 "min": 0,
                 "max": 10,
                 "step": 1,
-                "default": 2,
+                "default": 0, # Neutral radius is 0
                 "applies_to": ["blur"]
             },
         ]
@@ -71,14 +72,14 @@ EDITOR_TOOLS = {
                 "label": "New Width",
                 "type": "number",
                 "min": 1,
-                "default": 500,
+                "default": 0, # UPDATED: Placeholder '0', will be set by JS
             },
             {
                 "id": "height",
                 "label": "New Height",
                 "type": "number",
                 "min": 1,
-                "default": 500,
+                "default": 0, # UPDATED: Placeholder '0', will be set by JS
             },
         ]
     },
@@ -90,7 +91,7 @@ EDITOR_TOOLS = {
                 "id": "text",
                 "label": "Text",
                 "type": "text",
-                "default": "Your Subtitle Here",
+                "default": "", # UPDATED: Set to empty string
             },
             {
                 "id": "font_size",
@@ -112,7 +113,7 @@ EDITOR_TOOLS = {
                 "type": "number",
                 "min": 0,
                 "max": 10,
-                "default": 2,
+                "default": 0, # UPDATED: Neutral default is 0
             },
             {
                 "id": "align",
@@ -131,8 +132,6 @@ EDITOR_TOOLS = {
                 "type": "checkbox",
                 "default": False,
             },
-            # Note: CropEditor and WatermarkEditor are more complex for a simple demo and omitted
-            # but can be added here following the same pattern.
         ]
     },
 }

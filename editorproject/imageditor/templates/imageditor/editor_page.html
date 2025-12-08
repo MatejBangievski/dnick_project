@@ -221,7 +221,7 @@
         </div>
     </div>
 
-    <script>
+<script>
         const imageUpload = document.getElementById('image-upload');
         const uploadPrompt = document.getElementById('upload-prompt');
         const previewImage = document.getElementById('preview-image');
@@ -237,14 +237,26 @@
         let currentImageFile = null;
         let originalImageURL = null;
 
-        // CRITICAL: Stores the immutable path of the original uploaded file (Task 2 & 3)
-        let originalFilePath = null;
+        let originalFilePath = null; // Immutable source
+        let workingFilePath = null;  // Committed state (Source for Apply/Download)
+        let previewFilePath = null;  // Transient state (What the user sees during live preview)
 
-        // CRITICAL: Stores the path of the current, editable working copy (Task 2 & 3)
-        let currentFilePath = null;
         let currentToolKey = null;
 
-        const EDITOR_TOOLS = JSON.parse('{{ js_editor_tools|safe }}'.replace(/&quot;/g, '"'));
+        // NEW: Store dimensions of the currently uploaded image
+        let currentImageWidth = 0;
+        let currentImageHeight = 0;
+
+        // Deep copy of the EDITOR_TOOLS config to safely modify defaults for the current session
+        const EDITOR_TOOLS_CONFIG = JSON.parse('{{ js_editor_tools|safe }}'.replace(/&quot;/g, '"'));
+        const EDITOR_TOOLS = JSON.parse(JSON.stringify(EDITOR_TOOLS_CONFIG)); // Deep copy
+
+        // --- Optimization: Debounce Utility ---
+        let debounceTimer;
+        function debounce(func, delay) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(func, delay);
+        }
 
         // --- Utility Functions ---
 
@@ -296,6 +308,7 @@
 
                     input.addEventListener('input', (e) => {
                         valueDisplay.textContent = e.target.value;
+                        debounce(handlePreviewUpdate, 150); // Live preview with debouncing
                     });
                     break;
                 case 'number':
@@ -306,12 +319,18 @@
                     input.min = option.min || 1;
                     if (option.hasOwnProperty('max')) input.max = option.max;
                     input.value = option.default;
+                    input.addEventListener('input', () => {
+                        debounce(handlePreviewUpdate, 150);
+                    });
                     break;
                 case 'text':
                     input = document.createElement('textarea');
                     input.id = option.id;
                     input.name = option.id;
                     input.value = option.default;
+                    input.addEventListener('input', () => {
+                        debounce(handlePreviewUpdate, 150);
+                    });
                     break;
                 case 'color':
                     input = document.createElement('input');
@@ -319,6 +338,9 @@
                     input.id = option.id;
                     input.name = option.id;
                     input.value = option.default;
+                    input.addEventListener('input', () => {
+                        debounce(handlePreviewUpdate, 150);
+                    });
                     break;
                 case 'checkbox':
                     input = document.createElement('input');
@@ -326,6 +348,7 @@
                     input.id = option.id;
                     input.name = option.id;
                     input.checked = option.default;
+                    input.addEventListener('change', handlePreviewUpdate); // Change event for checkboxes
                     break;
                 case 'select':
                     input = document.createElement('select');
@@ -340,6 +363,7 @@
                         }
                         input.appendChild(optionElement);
                     });
+                    input.addEventListener('change', handlePreviewUpdate); // Change event for selects
                     break;
                 default:
                     return null;
@@ -350,10 +374,31 @@
             return group;
         }
 
+        // NEW: Function to find an option by ID and update its default value
+        function updateToolDefault(toolKey, optionId, newValue) {
+            const toolConfig = EDITOR_TOOLS[toolKey];
+            if (!toolConfig) return;
+
+            const option = toolConfig.options.find(opt => opt.id === optionId);
+            if (option) {
+                option.default = newValue;
+            }
+        }
+
         // --- Core Logic ---
 
         function renderSettings(toolKey) {
             currentToolKey = toolKey;
+
+            // 1. DYNAMIC DEFAULT UPDATE
+            if (toolKey === 'resize' && currentImageWidth > 0 && currentImageHeight > 0) {
+                // Set defaults to current dimensions (ensures a neutral state)
+                updateToolDefault('resize', 'width', currentImageWidth);
+                updateToolDefault('resize', 'height', currentImageHeight);
+            }
+            // Note: Filter and Subtitle defaults are handled by the static config update
+
+            // 2. Clear and Render
             toolSettingsDiv.innerHTML = '';
 
             const toolConfig = EDITOR_TOOLS[toolKey];
@@ -362,6 +407,7 @@
             let filterSelect = null;
 
             toolConfig.options.forEach(option => {
+                // The createSettingInput function now uses the potentially updated 'option.default' value
                 const inputGroup = createSettingInput(option);
                 if (inputGroup) {
                     toolSettingsDiv.appendChild(inputGroup);
@@ -378,6 +424,9 @@
                     updateDynamicSettings(e.target.value);
                 });
             }
+
+            // Trigger an immediate preview update when tool settings are rendered/selected
+            handlePreviewUpdate();
         }
 
         function updateDynamicSettings(currentFilterValue) {
@@ -396,6 +445,9 @@
                      }
                 }
             });
+
+            // Trigger preview update whenever dynamic settings change visibility/state
+            handlePreviewUpdate();
         }
 
         async function handleInitialUpload(file) {
@@ -416,9 +468,13 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // CRITICAL UPDATE: Capture both paths from the server
                     originalFilePath = data.original_file_path;
-                    currentFilePath = data.working_file_path;
+                    workingFilePath = data.working_file_path;
+                    previewFilePath = data.preview_file_path;
+
+                    // NEW: Store dimensions
+                    currentImageWidth = data.image_width;
+                    currentImageHeight = data.image_height;
 
                     uploadPrompt.classList.add('hidden');
                     previewImage.style.display = 'block';
@@ -444,16 +500,34 @@
             }
         }
 
+        // NEW FUNCTION: Handles live preview updates without committing
+        async function handlePreviewUpdate() {
+            if (!workingFilePath || !previewFilePath || !currentToolKey) return;
 
-        // UPDATED: applyEdit now performs the COMMIT/APPLY operation, saving changes to currentFilePath.
-        async function applyEdit() {
-            if (!currentFilePath || !currentToolKey) return;
+            // OPTIMIZATION: Check if the tool is "resize" and values match current dimensions.
+            // If so, and we are viewing the working copy, skip the preview request.
+            if (currentToolKey === 'resize') {
+                const widthInput = document.getElementById('width');
+                const heightInput = document.getElementById('height');
 
-            loadingOverlay.style.display = 'flex';
+                // If the inputs exist and their values match the current image state, skip preview
+                if (widthInput && heightInput) {
+                    const currentW = parseInt(widthInput.value);
+                    const currentH = parseInt(heightInput.value);
+                    if (currentW === currentImageWidth && currentH === currentImageHeight) {
+                        // If the user hasn't changed the default resize value, don't re-process.
+                        return;
+                    }
+                }
+            }
+
+
+            // Show a lighter visual cue that processing is happening
+            previewArea.style.opacity = '0.7';
 
             const formData = new FormData();
-            // We use currentFilePath as the source and destination for the commit
-            formData.append('current_file_path', currentFilePath);
+            formData.append('working_file_path', workingFilePath); // Source: Committed state
+            formData.append('current_preview_path', previewFilePath); // Destination: Transient state
             formData.append('tool_key', currentToolKey);
 
             const options = {};
@@ -472,7 +546,43 @@
             formData.append('options', JSON.stringify(options));
 
             try {
-                // process_image now reads the working copy, edits it, and overwrites the working copy.
+                const response = await fetch('{% url "preview_image" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update the image source with cache buster
+                    previewImage.src = data.temp_image_url + '?' + new Date().getTime();
+                    previewFilePath = data.preview_file_path; // Keep track of the overwritten preview file
+                    applyButton.disabled = false;
+                } else {
+                    console.error('Preview Error:', data.error);
+                }
+            } catch (error) {
+                console.error('Preview fetch error:', error);
+            } finally {
+                previewArea.style.opacity = '1'; // Restore opacity
+            }
+        }
+
+
+        // UPDATED: applyEdit now copies the PREVIEW state to the WORKING state (COMMIT)
+        async function applyEdit() {
+            if (!workingFilePath || !previewFilePath) return;
+
+            loadingOverlay.style.display = 'flex';
+
+            const formData = new FormData();
+            formData.append('working_file_path', workingFilePath); // Destination
+            formData.append('preview_file_path', previewFilePath); // Source (What the user currently sees)
+
+            try {
                 const response = await fetch('{% url "process_image" %}', {
                     method: 'POST',
                     headers: {
@@ -484,11 +594,21 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Add a cache buster to force the browser to reload the image from the same path
-                    previewImage.src = data.temp_image_url + '?' + new Date().getTime();
-                    currentFilePath = data.file_path;
+                    // The working file has been updated to match the preview.
+                    workingFilePath = data.working_file_path;
 
-                    applyButton.disabled = false;
+                    // IMPORTANT: If resize was applied, we must update the stored dimensions
+                    if (currentToolKey === 'resize') {
+                        const widthInput = document.getElementById('width');
+                        const heightInput = document.getElementById('height');
+                        if (widthInput && heightInput) {
+                            currentImageWidth = parseInt(widthInput.value);
+                            currentImageHeight = parseInt(heightInput.value);
+                        }
+                    }
+
+                    alert("Changes successfully applied to the working copy.");
+                    applyButton.disabled = true;
                 } else {
                     alert('Error: ' + data.error);
                 }
@@ -501,7 +621,7 @@
         }
 
 
-        // UPDATED: resetImage now calls the dedicated backend endpoint to create a fresh copy (Task 3).
+        // UPDATED: resetImage handles three file states
         async function resetImage() {
              if (!originalFilePath) return;
 
@@ -509,7 +629,8 @@
 
              const formData = new FormData();
              formData.append('original_file_path', originalFilePath);
-             formData.append('working_file_path', currentFilePath);
+             formData.append('working_file_path', workingFilePath);
+             formData.append('preview_file_path', previewFilePath);
 
              try {
                 const response = await fetch('{% url "reset_image_state" %}', {
@@ -523,12 +644,24 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    currentFilePath = data.working_file_path;
-                    // Add a cache buster to ensure the browser loads the new image copy
+                    workingFilePath = data.working_file_path;
+                    previewFilePath = data.preview_file_path;
+
+                    // NEW: Update dimensions from the reset response
+                    currentImageWidth = data.image_width;
+                    currentImageHeight = data.image_height;
+
+
                     previewImage.src = data.temp_image_url + '?' + new Date().getTime();
 
-                    alert("Image preview state reset to the original upload (new working copy created).");
-                    applyButton.disabled = true;
+                    alert("Image preview state reset to the original upload (new copies created).");
+
+                    // Re-render settings to reflect new dimensions if a tool is active
+                    if (currentToolKey) {
+                        renderSettings(currentToolKey);
+                    } else {
+                         applyButton.disabled = true;
+                    }
                 } else {
                     alert('Reset Error: ' + data.error);
                 }
@@ -545,14 +678,13 @@
         // 1. Tool Selection
         toolButtons.forEach(button => {
             button.addEventListener('click', () => {
-                if (!currentFilePath) {
+                if (!workingFilePath) {
                     alert("Please upload an image first.");
                     return;
                 }
                 toolButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 renderSettings(button.dataset.toolKey);
-                applyButton.disabled = false;
             });
         });
 
@@ -561,9 +693,9 @@
         resetButton.addEventListener('click', resetImage);
 
         downloadButton.addEventListener('click', () => {
-            if (currentFilePath) {
-                // Download uses the current working file path
-                window.location.href = `{% url "download_image" %}?file_path=${currentFilePath}`;
+            if (workingFilePath) {
+                // Download uses the committed state (workingFilePath)
+                window.location.href = `{% url "download_image" %}?file_path=${workingFilePath}`;
             } else {
                 alert("No image is currently available for download.");
             }

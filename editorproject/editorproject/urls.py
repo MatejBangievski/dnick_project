@@ -15,8 +15,9 @@ urlpatterns = [
     path('', editor_views.editor_page, name='editor_page'),
 
     path('api/upload/initial/', editor_views.initial_upload, name='initial_upload'),
-    path('api/process/', editor_views.process_image, name='process_image'), # This is now the COMMIT/APPLY step
-    path('api/reset_state/', editor_views.reset_image_state, name='reset_image_state'), # NEW RESET URL
+    path('api/preview/', editor_views.preview_image, name='preview_image'), # NEW: For live non-committing updates
+    path('api/process/', editor_views.process_image, name='process_image'), # COMMIT: For final "Apply Changes"
+    path('api/reset_state/', editor_views.reset_image_state, name='reset_image_state'),
     path('api/download/', editor_views.download_image, name='download_image'),
 ]
 
