@@ -12,18 +12,18 @@ from django.views.decorators.http import require_http_methods
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from PIL import Image
+from copy import deepcopy
 
+# Attempt to import tools config; fall back to an empty dict so the module remains importable
 try:
-    # IMPORTANT: We need to use a deep copy of EDITOR_TOOLS here
-    # so we don't modify the original constant in config.py
-    from copy import deepcopy
     from .config import EDITOR_TOOLS as BASE_EDITOR_TOOLS
-
-    EDITOR_TOOLS = deepcopy(BASE_EDITOR_TOOLS)
-except ImportError:
-    EDITOR_TOOLS = {}
+except Exception:
+    BASE_EDITOR_TOOLS = {}
     print(
-        "\n!!! CRITICAL ERROR: Could not import EDITOR_TOOLS. Check the import path in views.py and check config.py for syntax errors. !!!\n")
+        "\n!!! WARNING: Could not import EDITOR_TOOLS from imageditor.config; using empty toolset. Check config.py for syntax errors. !!!\n")
+
+# Make a working copy of the base editor tools for runtime modifications
+EDITOR_TOOLS = deepcopy(BASE_EDITOR_TOOLS)
 
 # --- Configuration ---
 TEMP_IMAGE_DIR = 'temp_edited_images'
@@ -231,6 +231,60 @@ def reset_image_state(request):
         return JsonResponse({"success": False, "error": "Original image file not found on server."}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "error": f"Reset error: {str(e)}"}, status=500)
+
+
+# NEW: Reset transient PREVIEW by copying from the committed WORKING file
+@csrf_exempt
+@require_http_methods(["POST"])
+def reset_preview_to_working(request):
+    """
+    Copies the committed working file into a new preview file and returns its path/URL.
+    This is used when the user switches tools and we want to discard unsaved preview-only changes.
+
+    POST parameters:
+    - working_file_path (required): the path to the committed working copy in MEDIA
+    - current_preview_path (optional): the current transient preview path to delete
+    """
+    working_file_path = request.POST.get('working_file_path')
+    current_preview_path = request.POST.get('current_preview_path')
+
+    if not working_file_path:
+        return JsonResponse({'success': False, 'error': 'Missing working_file_path.'}, status=400)
+
+    try:
+        if not default_storage.exists(working_file_path):
+            return JsonResponse({'success': False, 'error': 'Working file not found.'}, status=404)
+
+        # Optionally delete the current preview file (we will create a fresh one)
+        try:
+            if current_preview_path and default_storage.exists(current_preview_path):
+                default_storage.delete(current_preview_path)
+        except Exception:
+            # Non-fatal: ignore deletion errors
+            pass
+
+        # Determine extension from the working file
+        name, ext = os.path.splitext(working_file_path)
+        file_ext = ext[1:].lower() or 'png'
+
+        # Create a brand-new preview file path and copy content from the working file
+        new_preview_path = generate_temp_file_path(file_ext)
+        with default_storage.open(working_file_path, 'rb') as wf:
+            content = ContentFile(wf.read())
+            saved_path = default_storage.save(new_preview_path, content)
+
+        temp_image_url = settings.MEDIA_URL + saved_path
+
+        return JsonResponse({
+            'success': True,
+            'preview_file_path': saved_path,
+            'temp_image_url': temp_image_url
+        })
+
+    except FileNotFoundError:
+        return JsonResponse({'success': False, 'error': 'Working file not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Reset preview error: {str(e)}'}, status=500)
 
 
 @csrf_exempt

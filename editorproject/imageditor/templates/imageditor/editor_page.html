@@ -727,11 +727,44 @@
 
         // 1. Tool Selection
         toolButtons.forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', async () => {
                 if (!workingFilePath) {
                     alert("Please upload an image first.");
                     return;
                 }
+
+                // If there are unsaved preview changes (Apply enabled), discard them by
+                // resetting the transient preview to match the committed working copy.
+                if (!applyButton.disabled) {
+                    try {
+                        const formData = new FormData();
+                        formData.append('working_file_path', workingFilePath);
+                        formData.append('current_preview_path', previewFilePath);
+
+                        const resp = await fetch('{% url "reset_preview" %}', {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': csrftoken },
+                            body: formData
+                        });
+
+                        const data = await resp.json();
+                        if (data.success) {
+                            previewFilePath = data.preview_file_path;
+                            previewImage.src = data.temp_image_url + '?' + new Date().getTime();
+                            applyButton.disabled = true; // no unsaved preview changes now
+                        } else {
+                            console.error('Reset preview failed:', data.error);
+                            alert('Could not reset preview: ' + (data.error || 'Unknown error'));
+                            // Fallback: do not change tool selection to avoid losing work
+                            return;
+                        }
+                    } catch (err) {
+                        console.error('Reset preview fetch error:', err);
+                        alert('An unexpected error occurred while resetting preview.');
+                        return;
+                    }
+                }
+
                 toolButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 renderSettings(button.dataset.toolKey);
@@ -797,3 +830,4 @@
     </script>
 </body>
 </html>
+
