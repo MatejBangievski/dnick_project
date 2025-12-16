@@ -1,5 +1,5 @@
 from PIL import Image
-from editors.text_overlay import SubtitleEditor
+from editors.image.text_overlay import SubtitleEditor
 
 img = Image.open("../resources/sheep.png")
 

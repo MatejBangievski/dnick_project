@@ -1,4 +1,4 @@
-from editors.watermark import WatermarkEditor
+from editors.image.watermark import WatermarkEditor
 from PIL import Image
 
 img_path = "../resources/sheep.png"
