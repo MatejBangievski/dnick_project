@@ -158,15 +158,17 @@ class SubtitleEditor(ImageEditor):
 
     # Map logical font names to candidate filenames you might find on typical OSes.
     COMMON_FONTS = {
-        "arial": ["arial.ttf", "Arial.ttf"],
+        "arial": ["arial.ttf", "Arial.ttf", "Arial Unicode.ttf"],
         "times": ["times.ttf", "Times New Roman.ttf", "Times.ttf"],
-        "courier": ["cour.ttf", "Courier New.ttf"],
+        "courier": ["cour.ttf", "Courier New.ttf", "Courier.ttf"],
         "calibri": ["calibri.ttf", "Calibri.ttf"],
         "tahoma": ["tahoma.ttf", "Tahoma.ttf"],
         "verdana": ["verdana.ttf", "Verdana.ttf"],
         "georgia": ["georgia.ttf", "Georgia.ttf"],
         "impact": ["impact.ttf", "Impact.ttf"],
-        "helvetica": ["Helvetica.ttf"],
+        "helvetica": ["Helvetica.ttf", "Helvetica.ttc"],
+        "comic_sans": ["comic.ttf", "Comic Sans MS.ttf", "ComicSansMS.ttf"],
+        "trebuchet": ["trebuc.ttf", "Trebuchet MS.ttf", "TrebuchetMS.ttf"],
     }
 
     STYLE_SUFFIXES = {
@@ -441,3 +443,4 @@ class WatermarkEditor(ImageEditor):
 
         else:
             raise ValueError(f"Unknown preset position '{name}'. Use tuple (x, y) for custom position.")
+

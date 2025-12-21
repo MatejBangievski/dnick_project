@@ -58,7 +58,7 @@ EDITOR_TOOLS = {
             {
                 "id": "presets",
                 "label": "Quick Rotation Presets",
-                "type": "button-group", # Custom type for button group
+                "type": "button-group",  # Custom type for button group
                 "buttons": [
                     {"value": 90, "label": "90°"},
                     {"value": 180, "label": "180°"},
@@ -108,6 +108,24 @@ EDITOR_TOOLS = {
                 "label": "Text",
                 "type": "text",
                 "default": "",
+            },
+            # ADD THIS NEW OPTION:
+            {
+                "id": "font_name",
+                "label": "Font Family",
+                "type": "font-carousel",
+                "default": "arial",
+                "fonts": [
+                    {"value": "arial", "label": "Arial"},
+                    {"value": "times", "label": "Times New Roman"},
+                    {"value": "georgia", "label": "Georgia"},
+                    {"value": "courier", "label": "Courier New"},
+                    {"value": "verdana", "label": "Verdana"},
+                    {"value": "tahoma", "label": "Tahoma"},
+                    {"value": "trebuchet", "label": "Trebuchet MS"},
+                    {"value": "impact", "label": "Impact"},
+                    {"value": "comic_sans", "label": "Comic Sans"},
+                ]
             },
             {
                 "id": "font_size",
