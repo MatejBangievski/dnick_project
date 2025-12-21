@@ -509,6 +509,17 @@
             const formData = new FormData();
             formData.append('image', file);
 
+            // OPTIMIZATION: Send old file paths for session cleanup if they exist
+            if (originalFilePath) {
+                formData.append('old_original_path', originalFilePath);
+            }
+            if (workingFilePath) {
+                formData.append('old_working_path', workingFilePath);
+            }
+            if (previewFilePath) {
+                formData.append('old_preview_path', previewFilePath);
+            }
+
             try {
                 const response = await fetch('{% url "initial_upload" %}', {
                     method: 'POST',

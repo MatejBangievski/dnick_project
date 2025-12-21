@@ -78,6 +78,35 @@ def generate_temp_file_path(extension='png'):
     return os.path.join(TEMP_IMAGE_DIR, filename)
 
 
+def generate_stable_file_paths(extension='png'):
+    """
+    Generate stable file paths for a single upload session using one UUID.
+    This prevents file duplication by ensuring the same 3 files are reused throughout the session.
+
+    Returns:
+        tuple: (original_path, working_path, preview_path)
+    """
+    session_id = uuid.uuid4().hex[:12]  # Shorter UUID for cleaner filenames
+    original_path = os.path.join(TEMP_IMAGE_DIR, f"original_{session_id}.{extension}")
+    working_path = os.path.join(TEMP_IMAGE_DIR, f"working_{session_id}.{extension}")
+    preview_path = os.path.join(TEMP_IMAGE_DIR, f"preview_{session_id}.{extension}")
+    return original_path, working_path, preview_path
+
+
+def cleanup_session_files(original_path, working_path, preview_path):
+    """
+    Clean up all three files from a previous session when uploading a new image.
+    This ensures we don't accumulate files from multiple uploads.
+    """
+    for file_path in [original_path, working_path, preview_path]:
+        try:
+            if file_path and default_storage.exists(file_path):
+                default_storage.delete(file_path)
+                print(f"[Session Cleanup] Deleted old file: {file_path}")
+        except Exception as e:
+            print(f"[Session Cleanup] Error deleting {file_path}: {e}")
+
+
 def parse_options(options_json):
     # ... (unchanged)
     options = json.loads(options_json)
@@ -140,6 +169,8 @@ def initial_upload(request):
     """
     Saves the original file, creates copies, and returns the image dimensions
     and the tool configuration with current dimensions for the Resize tool.
+
+    OPTIMIZATION: Uses stable file paths to prevent file duplication.
     """
     if 'image' not in request.FILES:
         return JsonResponse({"success": False, "error": "No image uploaded."}, status=400)
@@ -148,19 +179,28 @@ def initial_upload(request):
     name, ext = os.path.splitext(uploaded_file.name)
     file_ext = (ext[1:] or 'png').lower()
 
+    # OPTIMIZATION: Check if user had previous session files and clean them up
+    old_original = request.POST.get('old_original_path')
+    old_working = request.POST.get('old_working_path')
+    old_preview = request.POST.get('old_preview_path')
+
+    if old_original or old_working or old_preview:
+        cleanup_session_files(old_original, old_working, old_preview)
+        print(f"[Session Cleanup] Cleaned up previous session files before new upload")
+
+    # OPTIMIZATION: Generate stable file paths using descriptive names and single session UUID
+    original_file_path, working_file_path, preview_file_path = generate_stable_file_paths(file_ext)
+
     # 1. Save the ORIGINAL file (immutable state)
-    original_file_path = generate_temp_file_path(file_ext)
     default_storage.save(original_file_path, uploaded_file)
 
     # 2. Create the WORKING COPY from the original file (Committed State)
-    working_file_path = generate_temp_file_path(file_ext)
     default_storage.save(working_file_path, default_storage.open(original_file_path))
 
     # 3. Create an initial PREVIEW file (Transient State)
-    preview_file_path = generate_temp_file_path(file_ext)
     default_storage.save(preview_file_path, default_storage.open(working_file_path))
 
-    # NEW: Get dimensions of the uploaded image
+    # Get dimensions of the uploaded image
     width, height = get_image_dimensions(working_file_path)
 
     temp_image_url = settings.MEDIA_URL + preview_file_path
@@ -170,7 +210,6 @@ def initial_upload(request):
         "original_file_path": original_file_path,
         "working_file_path": working_file_path,
         "preview_file_path": preview_file_path,
-        # NEW: Send dimensions to the frontend
         "image_width": width,
         "image_height": height,
         "temp_image_url": temp_image_url
@@ -181,8 +220,10 @@ def initial_upload(request):
 @require_http_methods(["POST"])
 def reset_image_state(request):
     """
-    Deletes old copies, creates new working and preview copies from the original image,
-    and returns the image dimensions for the Resize tool's default.
+    Resets working and preview copies from the original image by overwriting existing files.
+    Returns the image dimensions for the Resize tool's default.
+
+    OPTIMIZATION: Reuses existing file paths instead of creating new ones to prevent file duplication.
     """
     original_file_path = request.POST.get('original_file_path')
     working_file_path = request.POST.get('working_file_path')
@@ -192,36 +233,32 @@ def reset_image_state(request):
         return JsonResponse({'error': 'Original file path missing.'}, status=400)
 
     try:
-        # Delete old copies
+        # OPTIMIZATION: Delete existing files to prepare for overwrite
         if working_file_path and default_storage.exists(working_file_path):
             default_storage.delete(working_file_path)
         if preview_file_path and default_storage.exists(preview_file_path):
             default_storage.delete(preview_file_path)
 
-            # Get file extension
-        name, ext = os.path.splitext(original_file_path)
-        file_ext = ext[1:].lower() or 'png'
+        # OPTIMIZATION: REUSE existing paths instead of calling generate_temp_file_path()
+        # This prevents creating new files with different UUIDs
 
-        # 1. Create brand new working file path (Resets committed state)
-        new_working_file_path = generate_temp_file_path(file_ext)
+        # 1. Overwrite the WORKING file with content from ORIGINAL (Resets committed state)
         with default_storage.open(original_file_path, 'rb') as original_file:
-            default_storage.save(new_working_file_path, ContentFile(original_file.read()))
+            default_storage.save(working_file_path, ContentFile(original_file.read()))
 
-        # 2. Create brand new preview file path (Resets transient state)
-        new_preview_file_path = generate_temp_file_path(file_ext)
-        with default_storage.open(new_working_file_path, 'rb') as working_file:
-            default_storage.save(new_preview_file_path, ContentFile(working_file.read()))
+        # 2. Overwrite the PREVIEW file with content from WORKING (Resets transient state)
+        with default_storage.open(working_file_path, 'rb') as working_file:
+            default_storage.save(preview_file_path, ContentFile(working_file.read()))
 
-        # NEW: Get dimensions of the newly reset image
-        width, height = get_image_dimensions(new_working_file_path)
+        # Get dimensions of the reset image
+        width, height = get_image_dimensions(working_file_path)
 
-        temp_image_url = settings.MEDIA_URL + new_preview_file_path
+        temp_image_url = settings.MEDIA_URL + preview_file_path
 
         return JsonResponse({
             "success": True,
-            "working_file_path": new_working_file_path,
-            "preview_file_path": new_preview_file_path,
-            # NEW: Send dimensions to the frontend
+            "working_file_path": working_file_path,  # Same path, not new_working_file_path
+            "preview_file_path": preview_file_path,  # Same path, not new_preview_file_path
             "image_width": width,
             "image_height": height,
             "temp_image_url": temp_image_url
@@ -238,12 +275,14 @@ def reset_image_state(request):
 @require_http_methods(["POST"])
 def reset_preview_to_working(request):
     """
-    Copies the committed working file into a new preview file and returns its path/URL.
+    Copies the committed working file into the preview file, overwriting it.
     This is used when the user switches tools and we want to discard unsaved preview-only changes.
+
+    OPTIMIZATION: Reuses existing preview path instead of creating a new one to prevent file duplication.
 
     POST parameters:
     - working_file_path (required): the path to the committed working copy in MEDIA
-    - current_preview_path (optional): the current transient preview path to delete
+    - current_preview_path (required): the current transient preview path to overwrite
     """
     working_file_path = request.POST.get('working_file_path')
     current_preview_path = request.POST.get('current_preview_path')
@@ -251,33 +290,32 @@ def reset_preview_to_working(request):
     if not working_file_path:
         return JsonResponse({'success': False, 'error': 'Missing working_file_path.'}, status=400)
 
+    if not current_preview_path:
+        return JsonResponse({'success': False, 'error': 'Missing current_preview_path.'}, status=400)
+
     try:
         if not default_storage.exists(working_file_path):
             return JsonResponse({'success': False, 'error': 'Working file not found.'}, status=404)
 
-        # Optionally delete the current preview file (we will create a fresh one)
+        # Delete the current preview file to prepare for overwrite
         try:
-            if current_preview_path and default_storage.exists(current_preview_path):
+            if default_storage.exists(current_preview_path):
                 default_storage.delete(current_preview_path)
         except Exception:
             # Non-fatal: ignore deletion errors
             pass
 
-        # Determine extension from the working file
-        name, ext = os.path.splitext(working_file_path)
-        file_ext = ext[1:].lower() or 'png'
-
-        # Create a brand-new preview file path and copy content from the working file
-        new_preview_path = generate_temp_file_path(file_ext)
+        # OPTIMIZATION: REUSE the existing current_preview_path instead of calling generate_temp_file_path()
+        # This prevents creating a new file with a different UUID
         with default_storage.open(working_file_path, 'rb') as wf:
             content = ContentFile(wf.read())
-            saved_path = default_storage.save(new_preview_path, content)
+            saved_path = default_storage.save(current_preview_path, content)
 
         temp_image_url = settings.MEDIA_URL + saved_path
 
         return JsonResponse({
             'success': True,
-            'preview_file_path': saved_path,
+            'preview_file_path': saved_path,  # Same path as current_preview_path
             'temp_image_url': temp_image_url
         })
 
