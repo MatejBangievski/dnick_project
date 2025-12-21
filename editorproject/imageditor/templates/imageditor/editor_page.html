@@ -78,12 +78,22 @@
         .upload-prompt.hidden { display: none; }
         .upload-prompt p { font-size: 1.1em; }
 
-        #preview-image {
+        /* Two stacked preview images for seamless swapping (no fade) */
+        #preview-image,
+        #preview-image-buffer {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
             display: none;
             z-index: 1;
+
+            position: absolute;
+            inset: 0;
+            margin: auto;
+        }
+
+        #preview-image-buffer {
+            visibility: hidden;
         }
 
         /* RIGHT SIDE: Tools and Settings (1/3 width) */
@@ -265,6 +275,25 @@
             color: var(--primary-color);
             z-index: 10;
         }
+
+        /* Subtle processing indicator for live previews */
+        .preview-area.processing::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.05);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .preview-area.processing #preview-image,
+        .preview-area.processing #preview-image-buffer {
+            opacity: 0.95;
+            transition: opacity 0.1s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -282,6 +311,7 @@
             </div>
 
             <img id="preview-image" alt="Image Preview">
+            <img id="preview-image-buffer" alt="" aria-hidden="true">
             <div class="loading" id="loading-overlay">Processing...</div>
         </div>
 
@@ -312,6 +342,7 @@
         const imageUpload = document.getElementById('image-upload');
         const uploadPrompt = document.getElementById('upload-prompt');
         const previewImage = document.getElementById('preview-image');
+        const previewImageBuffer = document.getElementById('preview-image-buffer');
         const previewArea = document.getElementById('preview-area');
         const toolButtons = document.querySelectorAll('.tool-button');
         const settingsTitle = document.getElementById('settings-title');
@@ -340,9 +371,15 @@
 
         // --- Optimization: Debounce Utility ---
         let debounceTimer;
+        let pendingUpdate = false;
+
         function debounce(func, delay) {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(func, delay);
+            pendingUpdate = true;
+            debounceTimer = setTimeout(() => {
+                pendingUpdate = false;
+                func();
+            }, delay);
         }
 
         // --- Utility Functions ---
@@ -663,8 +700,13 @@
                     currentImageHeight = data.image_height;
 
                     uploadPrompt.classList.add('hidden');
+
+                    // Show both (we control visibility)
                     previewImage.style.display = 'block';
-                    previewImage.src = data.temp_image_url;
+                    previewImageBuffer.style.display = 'block';
+
+                    previewSeq += 1;
+                    await swapPreviewUrl(data.temp_image_url, previewSeq);
 
                     resetButton.disabled = false;
                     downloadButton.disabled = false;
@@ -686,6 +728,65 @@
             }
         }
 
+        // --- Seamless preview swapping (no fade, no flash) ---
+        let previewActiveIsPrimary = true;
+        let previewSeq = 0;
+        let previewAbortController = null;
+
+        function _waitForImgLoad(imgEl) {
+            return new Promise((resolve, reject) => {
+                if (imgEl.complete && imgEl.naturalWidth > 0) return resolve();
+                imgEl.onload = () => resolve();
+                imgEl.onerror = () => reject(new Error('Image failed to load'));
+                // Timeout fallback to prevent infinite waiting
+                setTimeout(() => {
+                    if (imgEl.complete && imgEl.naturalWidth > 0) {
+                        resolve();
+                    } else {
+                        reject(new Error('Image load timeout'));
+                    }
+                }, 10000); // 10 second timeout
+            });
+        }
+
+        async function _decodeIfPossible(imgEl) {
+            if (typeof imgEl.decode === 'function') {
+                try {
+                    await imgEl.decode();
+                } catch (err) {
+                    // Image decode failed, but we can still display it
+                    console.warn('Image decode failed:', err);
+                }
+            }
+        }
+
+        async function swapPreviewUrl(url, seqToken) {
+            // If a newer request started, ignore this one
+            if (seqToken !== previewSeq) return;
+
+            const front = previewActiveIsPrimary ? previewImage : previewImageBuffer;
+            const back = previewActiveIsPrimary ? previewImageBuffer : previewImage;
+
+            // Ensure both are in the layout; we hide via visibility to avoid flicker
+            front.style.display = 'block';
+            back.style.display = 'block';
+
+            // Load into the hidden one
+            back.style.visibility = 'hidden';
+            back.src = url;
+
+            await _waitForImgLoad(back);
+            await _decodeIfPossible(back);
+
+            // Ignore if stale after await
+            if (seqToken !== previewSeq) return;
+
+            // Atomic swap
+            back.style.visibility = 'visible';
+            front.style.visibility = 'hidden';
+            previewActiveIsPrimary = !previewActiveIsPrimary;
+        }
+
         // NEW FUNCTION: Handles live preview updates without committing
         async function handlePreviewUpdate() {
             if (!workingFilePath || !previewFilePath || !currentToolKey) return;
@@ -704,9 +805,17 @@
                 }
             }
 
+            // Abort previous in-flight preview request
+            if (previewAbortController) {
+                try { previewAbortController.abort(); } catch (_) {}
+            }
+            previewAbortController = new AbortController();
 
-            // Show a lighter visual cue that processing is happening
-            previewArea.style.opacity = '0.7';
+            previewSeq += 1;
+            const seqToken = previewSeq;
+
+            // Add subtle processing indicator
+            previewArea.classList.add('processing');
 
             const formData = new FormData();
             formData.append('working_file_path', workingFilePath); // Source: Committed state
@@ -735,22 +844,31 @@
                         'X-CSRFToken': csrftoken,
                     },
                     body: formData,
+                    signal: previewAbortController.signal,
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    // Update the image source with cache buster
-                    previewImage.src = data.temp_image_url + '?' + new Date().getTime();
-                    previewFilePath = data.preview_file_path; // Keep track of the overwritten preview file
+                    const newImageURL = data.temp_image_url + '?v=' + seqToken;
+                    await swapPreviewUrl(newImageURL, seqToken);
+
+                    previewFilePath = data.preview_file_path;
                     applyButton.disabled = false;
+
+                    // Remove processing indicator after successful swap
+                    previewArea.classList.remove('processing');
                 } else {
                     console.error('Preview Error:', data.error);
+                    previewArea.classList.remove('processing');
                 }
             } catch (error) {
+                if (error && error.name === 'AbortError') {
+                    previewArea.classList.remove('processing');
+                    return; // expected during slider drags
+                }
                 console.error('Preview fetch error:', error);
-            } finally {
-                previewArea.style.opacity = '1'; // Restore opacity
+                previewArea.classList.remove('processing');
             }
         }
 
@@ -829,21 +947,18 @@
                 if (data.success) {
                     workingFilePath = data.working_file_path;
                     previewFilePath = data.preview_file_path;
-
-                    // NEW: Update dimensions from the reset response
                     currentImageWidth = data.image_width;
                     currentImageHeight = data.image_height;
 
-
-                    previewImage.src = data.temp_image_url + '?' + new Date().getTime();
+                    previewSeq += 1;
+                    await swapPreviewUrl(data.temp_image_url + '?v=' + previewSeq, previewSeq);
 
                     alert("Image preview state reset to the original upload (new copies created).");
 
-                    // Re-render settings to reflect new dimensions if a tool is active
                     if (currentToolKey) {
                         renderSettings(currentToolKey);
                     } else {
-                         applyButton.disabled = true;
+                        applyButton.disabled = true;
                     }
                 } else {
                     alert('Reset Error: ' + data.error);
@@ -883,7 +998,8 @@
                         const data = await resp.json();
                         if (data.success) {
                             previewFilePath = data.preview_file_path;
-                            previewImage.src = data.temp_image_url + '?' + new Date().getTime();
+                            previewSeq += 1;
+                            await swapPreviewUrl(data.temp_image_url + '?v=' + previewSeq, previewSeq);
                             applyButton.disabled = true; // no unsaved preview changes now
                         } else {
                             console.error('Reset preview failed:', data.error);

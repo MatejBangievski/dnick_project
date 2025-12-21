@@ -384,10 +384,17 @@ def preview_image(request):
         name, ext = os.path.splitext(working_file_path)
         file_ext = ext[1:].lower()
 
-        if file_ext in ['jpg', 'jpeg'] and edited_image.mode == 'RGB':
-            edited_image.save(output, format='JPEG', quality=90)
+        # OPTIMIZATION: Use progressive encoding and optimized compression for faster transfers
+        if file_ext in ['jpg', 'jpeg']:
+            if edited_image.mode not in ('RGB', 'L'):
+                edited_image = edited_image.convert('RGB')
+            edited_image.save(output, format='JPEG', quality=85, optimize=True, progressive=True)
+        elif file_ext == 'png':
+            # For PNG, use optimized compression
+            edited_image.save(output, format='PNG', optimize=True, compress_level=6)
         else:
-            edited_image.save(output, format='PNG')
+            # Default to PNG for other formats
+            edited_image.save(output, format='PNG', optimize=True, compress_level=6)
 
         output.seek(0)
 
@@ -401,6 +408,8 @@ def preview_image(request):
             "success": True,
             "temp_image_url": temp_image_url,
             "preview_file_path": saved_path
+        }, headers={
+            'Cache-Control': 'no-cache, must-revalidate',  # Allow browser to cache but always revalidate
         })
 
     except FileNotFoundError:

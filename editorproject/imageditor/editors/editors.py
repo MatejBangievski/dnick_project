@@ -33,7 +33,25 @@ class ResizeEditor(ImageEditor):
         if width is None or height is None:
             raise ValueError("ResizeEditor requires width and height")
 
-        return image.resize((width, height), Image.LANCZOS)
+        # OPTIMIZATION: Use LANCZOS for high-quality downsampling, BICUBIC for upsampling
+        target_size = (width, height)
+        current_size = image.size
+
+        # Choose appropriate resampling based on whether we're upscaling or downscaling
+        # Handle both old and new Pillow API versions
+        try:
+            LANCZOS = Image.Resampling.LANCZOS
+            BICUBIC = Image.Resampling.BICUBIC
+        except AttributeError:
+            LANCZOS = Image.LANCZOS
+            BICUBIC = Image.BICUBIC
+
+        if width > current_size[0] or height > current_size[1]:
+            # Upscaling - BICUBIC is faster and good enough
+            return image.resize(target_size, BICUBIC)
+        else:
+            # Downscaling - LANCZOS for best quality
+            return image.resize(target_size, LANCZOS)
 
 
 class RotateEditor(ImageEditor):
@@ -118,6 +136,10 @@ class FilterEditor(ImageEditor):
         # ---------------------------
         elif filter_name == "blur":
             radius = options.get("radius", 2)
+            # OPTIMIZATION: Clamp radius to prevent excessive processing time
+            radius = min(max(0, radius), 50)  # Limit to 0-50 range
+            if radius == 0:
+                return image
             return image.filter(ImageFilter.GaussianBlur(radius))
 
         # ---------------------------
@@ -126,6 +148,8 @@ class FilterEditor(ImageEditor):
         elif filter_name == "sharpen":
             # Use 'factor' from the config to define the strength/number of times to apply the sharpen filter
             strength = int(options.get("factor", 1.0))
+            # OPTIMIZATION: Clamp strength to prevent excessive processing
+            strength = min(max(1, strength), 10)  # Limit to 1-10 iterations
 
             result = image
             for _ in range(strength):
@@ -138,6 +162,8 @@ class FilterEditor(ImageEditor):
         elif filter_name == "edge_enhance":
             # Use 'factor' from the config to define the strength/number of times to apply the edge enhance filter
             strength = int(options.get("factor", 1.0))
+            # OPTIMIZATION: Clamp strength to prevent excessive processing
+            strength = min(max(1, strength), 10)  # Limit to 1-10 iterations
 
             result = image
             for _ in range(strength):
@@ -413,7 +439,13 @@ class WatermarkEditor(ImageEditor):
             h = max_h
             w = int(w * scale)
 
-        return watermark.resize((w, h), Image.LANCZOS)
+        # Handle both old and new Pillow API versions
+        try:
+            LANCZOS = Image.Resampling.LANCZOS
+        except AttributeError:
+            LANCZOS = Image.LANCZOS
+
+        return watermark.resize((w, h), LANCZOS)
 
     def _preset_position(self, name, base, wm):
         bw, bh = base.size
