@@ -111,18 +111,40 @@ def parse_options(options_json):
     # ... (unchanged)
     options = json.loads(options_json)
 
+    # Fields that should NEVER be converted to numbers (keep as strings)
+    KEEP_AS_STRING = {
+        'text',           # Text content for subtitles
+        'font_name',      # Font family name
+        'font_color',     # Hex color code (e.g., "#FFFFFF")
+        'stroke_color',   # Hex color code
+        'rect_color',     # Hex color code
+        'shadow_color',   # Hex color code
+        'filter',         # Filter name
+        'align',          # Text alignment
+        'position',       # Position name
+        'style',          # Font style
+        'watermark',      # File path
+        'select_filter',  # Selected filter name
+    }
+
     for key, value in options.items():
         if isinstance(value, str):
+            # Skip numeric conversion for text-based fields
+            if key in KEEP_AS_STRING:
+                continue
+
+            # Convert booleans
             if value.lower() in ('true', 'false'):
                 options[key] = value.lower() == 'true'
             else:
+                # Try to convert to number only if it's NOT a text field
                 try:
                     options[key] = int(value)
                 except ValueError:
                     try:
                         options[key] = float(value)
                     except ValueError:
-                        pass
+                        pass  # Keep as string if conversion fails
     return options
 
 
