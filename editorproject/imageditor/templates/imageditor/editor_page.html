@@ -119,7 +119,8 @@
             font-family: Arial, sans-serif;
             color: #FFFFFF;
             text-align: center;
-            word-wrap: break-word;
+            white-space: pre-line;
+            line-height: 1.2;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
             pointer-events: none;
             user-select: none;
@@ -823,11 +824,29 @@
         }
 
         function updateTextBoxPosition() {
+            // Get image boundaries
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            // Constrain text box to stay within image boundaries
+            const minX = imgOffsetX;
+            const minY = imgOffsetY;
+            const maxX = imgOffsetX + imgRect.width - textBoxState.width;
+            const maxY = imgOffsetY + imgRect.height - textBoxState.height;
+
+            // Apply constraints
+            textBoxState.x = Math.max(minX, Math.min(maxX, textBoxState.x));
+            textBoxState.y = Math.max(minY, Math.min(maxY, textBoxState.y));
+
+            // Update DOM
             textBoxOverlay.style.left = textBoxState.x + 'px';
             textBoxOverlay.style.top = textBoxState.y + 'px';
             textBoxOverlay.style.width = textBoxState.width + 'px';
             textBoxOverlay.style.height = textBoxState.height + 'px';
         }
+
 
         // Drag functionality
         let isDragging = false;
@@ -928,10 +947,41 @@
         });
 
         // Update text box content when text input changes
+                // Wrap text exactly like the backend does (split by spaces, measure width)
+        function wrapTextLikeBackend(text, maxWidth, fontSize, fontFamily) {
+            if (!text) return [''];
+
+            // Create a temporary canvas to measure text width
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.font = `${fontSize}px ${fontFamily}`;
+
+            const words = text.split(/\s+/);
+            if (words.length === 0) return [''];
+
+            const lines = [];
+            let line = words[0];
+
+            for (let i = 1; i < words.length; i++) {
+                const testLine = line + ' ' + words[i];
+                const metrics = ctx.measureText(testLine);
+
+                if (metrics.width <= maxWidth) {
+                    line = testLine;
+                } else {
+                    lines.push(line);
+                    line = words[i];
+                }
+            }
+            lines.push(line);
+            return lines;
+        }
+
+        // Update text box content when text input changes
         function updateTextBoxContent() {
             const textInput = document.getElementById('text');
             if (textInput && textBoxOverlay.classList.contains('active')) {
-                textBoxContent.textContent = textInput.value || 'Your text here';
+                const text = textInput.value || 'Your text here';
 
                 // Get all styling inputs
                 const fontSizeInput = document.getElementById('font_size');
@@ -940,7 +990,8 @@
                 const rectInput = document.getElementById('rect');
                 const fontNameInput = document.querySelector('input[name="font_name"]');
 
-                // Update font family
+                // Get font settings
+                let fontFamily = 'Arial, sans-serif';
                 if (fontNameInput) {
                     const fontName = fontNameInput.value;
                     const fontMap = {
@@ -954,14 +1005,20 @@
                         'impact': 'Impact, sans-serif',
                         'comic_sans': 'Comic Sans MS, cursive'
                     };
-                    textBoxContent.style.fontFamily = fontMap[fontName] || 'Arial, sans-serif';
+                    fontFamily = fontMap[fontName] || 'Arial, sans-serif';
+                    textBoxContent.style.fontFamily = fontFamily;
                 }
 
-                // Update font size - use direct value for preview
-                if (fontSizeInput) {
-                    const fontSize = parseInt(fontSizeInput.value) || 32;
-                    textBoxContent.style.fontSize = fontSize + 'px';
-                }
+                // Get font size
+                const fontSize = fontSizeInput ? (parseInt(fontSizeInput.value) || 32) : 32;
+                textBoxContent.style.fontSize = fontSize + 'px';
+
+                // Calculate available width for text (account for padding)
+                const availableWidth = textBoxState.width - 20; // 10px padding on each side
+
+                // Wrap text exactly like backend does
+                const wrappedLines = wrapTextLikeBackend(text, availableWidth, fontSize, fontFamily);
+                textBoxContent.textContent = wrappedLines.join('\n');
 
                 // Update font color
                 if (fontColorInput) {

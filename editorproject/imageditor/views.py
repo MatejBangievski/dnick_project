@@ -108,26 +108,42 @@ def cleanup_session_files(original_path, working_path, preview_path):
 
 
 def parse_options(options_json):
-    # ... (unchanged)
+    """Parse and convert options from JSON string, handling type conversions."""
     options = json.loads(options_json)
 
     # Fields that should NEVER be converted to numbers (keep as strings)
     KEEP_AS_STRING = {
-        'text',           # Text content for subtitles
-        'font_name',      # Font family name
-        'font_color',     # Hex color code (e.g., "#FFFFFF")
-        'stroke_color',   # Hex color code
-        'rect_color',     # Hex color code
-        'shadow_color',   # Hex color code
-        'filter',         # Filter name
-        'align',          # Text alignment
-        'position',       # Position name
-        'style',          # Font style
-        'watermark',      # File path
+        'text',  # Text content for subtitles
+        'font_name',  # Font family name
+        'filter',  # Filter name
+        'align',  # Text alignment
+        'position',  # Position name
+        'style',  # Font style
+        'watermark',  # File path
         'select_filter',  # Selected filter name
     }
 
+    # Color fields that need hex to RGB conversion
+    COLOR_FIELDS = {
+        'font_color',  # Hex color code (e.g., "#FFFFFF")
+        'stroke_color',  # Hex color code
+        'rect_color',  # Hex color code
+        'shadow_color',  # Hex color code
+    }
+
+    def hex_to_rgb(hex_color):
+        """Convert hex color to RGB tuple."""
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) == 6:
+            return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+        return (255, 255, 255)  # Default to white if invalid
+
     for key, value in options.items():
+        # Convert hex colors to RGB tuples
+        if key in COLOR_FIELDS and isinstance(value, str) and value.startswith('#'):
+            options[key] = hex_to_rgb(value)
+            continue
+
         if isinstance(value, str):
             # Skip numeric conversion for text-based fields
             if key in KEEP_AS_STRING:
