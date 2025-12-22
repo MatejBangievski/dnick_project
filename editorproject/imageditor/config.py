@@ -150,17 +150,6 @@ EDITOR_TOOLS = {
                 "default": 0,
             },
             {
-                "id": "align",
-                "label": "Alignment",
-                "type": "select",
-                "default": "center",
-                "choices": [
-                    {"value": "left", "label": "Left"},
-                    {"value": "center", "label": "Center"},
-                    {"value": "right", "label": "Right"},
-                ]
-            },
-            {
                 "id": "rect",
                 "label": "Background Box",
                 "type": "checkbox",

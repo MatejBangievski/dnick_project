@@ -58,6 +58,89 @@
             z-index: 5;
         }
 
+        #image-upload.disabled {
+            pointer-events: none;
+            display: none;
+        }
+
+        /* Upload New Picture Button */
+        .upload-new-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 6;
+            display: none;
+            box-shadow: var(--shadow-md);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .upload-new-btn:hover {
+            background-color: #0056b3;
+            transform: translateX(-50%) translateY(-2px);
+        }
+
+        .upload-new-btn:active {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Draggable Text Box for Subtitle Tool */
+        .text-box-overlay {
+            position: absolute;
+            display: none;
+            border: 2px dashed var(--primary-color);
+            background: rgba(0, 123, 255, 0.1);
+            cursor: move;
+            z-index: 3;
+            min-width: 100px;
+            min-height: 50px;
+            box-sizing: border-box;
+        }
+
+        .text-box-overlay.active {
+            display: block;
+        }
+
+        .text-box-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            color: #FFFFFF;
+            text-align: center;
+            word-wrap: break-word;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Resize handles */
+        .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--primary-color);
+            border: 2px solid white;
+            border-radius: 50%;
+            z-index: 4;
+        }
+
+        .resize-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+        .resize-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+        .resize-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+        .resize-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+
         .upload-prompt {
             position: absolute;
             width: 80%;
@@ -90,6 +173,14 @@
             position: absolute;
             inset: 0;
             margin: auto;
+
+            /* Prevent image dragging */
+            user-select: none;
+            -webkit-user-drag: none;
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            pointer-events: none;
         }
 
         #preview-image-buffer {
@@ -310,8 +401,21 @@
                 <p>or click anywhere in this box to upload.</p>
             </div>
 
-            <img id="preview-image" alt="Image Preview">
-            <img id="preview-image-buffer" alt="" aria-hidden="true">
+            <img id="preview-image" alt="Image Preview" draggable="false">
+            <img id="preview-image-buffer" alt="" aria-hidden="true" draggable="false">
+
+            <!-- Draggable Text Box for Subtitle Tool -->
+            <div class="text-box-overlay" id="text-box-overlay">
+                <div class="text-box-content" id="text-box-content">Your text here</div>
+                <div class="resize-handle nw" data-direction="nw"></div>
+                <div class="resize-handle ne" data-direction="ne"></div>
+                <div class="resize-handle sw" data-direction="sw"></div>
+                <div class="resize-handle se" data-direction="se"></div>
+            </div>
+
+            <!-- Upload New Picture Button -->
+            <button class="upload-new-btn" id="upload-new-btn">Upload New Picture</button>
+
             <div class="loading" id="loading-overlay">Processing...</div>
         </div>
 
@@ -351,9 +455,11 @@
         const resetButton = document.getElementById('reset-button');
         const downloadButton = document.getElementById('download-button');
         const loadingOverlay = document.getElementById('loading-overlay');
+        const textBoxOverlay = document.getElementById('text-box-overlay');
+        const textBoxContent = document.getElementById('text-box-content');
+        const uploadNewBtn = document.getElementById('upload-new-btn');
 
         let currentImageFile = null;
-        let originalImageURL = null;
 
         let originalFilePath = null; // Immutable source
         let workingFilePath = null;  // Committed state (Source for Apply/Download)
@@ -364,6 +470,14 @@
         // NEW: Store dimensions of the currently uploaded image
         let currentImageWidth = 0;
         let currentImageHeight = 0;
+
+        // Text box state (position and size relative to preview image)
+        let textBoxState = {
+            x: 0,      // X position in pixels
+            y: 0,      // Y position in pixels
+            width: 300,  // Width in pixels
+            height: 100  // Height in pixels
+        };
 
         // Deep copy of the EDITOR_TOOLS config to safely modify defaults for the current session
         const EDITOR_TOOLS_CONFIG = JSON.parse('{{ js_editor_tools|safe }}'.replace(/&quot;/g, '"'));
@@ -444,6 +558,7 @@
                     if (option.hasOwnProperty('max')) input.max = option.max;
                     input.value = option.default;
                     input.addEventListener('input', () => {
+                        if (currentToolKey === 'subtitle') updateTextBoxContent();
                         debounce(handlePreviewUpdate, 150);
                     });
                     break;
@@ -453,6 +568,7 @@
                     input.name = option.id;
                     input.value = option.default;
                     input.addEventListener('input', () => {
+                        if (currentToolKey === 'subtitle') updateTextBoxContent();
                         debounce(handlePreviewUpdate, 150);
                     });
                     break;
@@ -463,6 +579,7 @@
                     input.name = option.id;
                     input.value = option.default;
                     input.addEventListener('input', () => {
+                        if (currentToolKey === 'subtitle') updateTextBoxContent();
                         debounce(handlePreviewUpdate, 150);
                     });
                     break;
@@ -487,7 +604,10 @@
                         }
                         input.appendChild(optionElement);
                     });
-                    input.addEventListener('change', handlePreviewUpdate); // Change event for selects
+                    input.addEventListener('change', () => {
+                        if (currentToolKey === 'subtitle') updateTextBoxContent();
+                        handlePreviewUpdate();
+                    }); // Change event for selects
                     break;
                 case 'button-group': // CASE for Preset Buttons
                     group.appendChild(label); // Keep the label for the group
@@ -570,6 +690,7 @@
                             });
                             fontOption.classList.add('selected');
                             hiddenInput.value = font.value;
+                            if (currentToolKey === 'subtitle') updateTextBoxContent();
                             handlePreviewUpdate();
                         });
                         carousel.appendChild(fontOption);
@@ -602,6 +723,13 @@
 
         function renderSettings(toolKey) {
             currentToolKey = toolKey;
+
+            // Show/hide text box overlay for subtitle tool
+            if (toolKey === 'subtitle') {
+                textBoxOverlay.classList.add('active');
+            } else {
+                textBoxOverlay.classList.remove('active');
+            }
 
             // 1. DYNAMIC DEFAULT UPDATE
             if (toolKey === 'resize' && currentImageWidth > 0 && currentImageHeight > 0) {
@@ -637,6 +765,11 @@
                 });
             }
 
+            // Initialize text box content for subtitle tool after all inputs are created
+            if (toolKey === 'subtitle') {
+                updateTextBoxContent();
+            }
+
             // Trigger an immediate preview update when tool settings are rendered/selected
             handlePreviewUpdate();
         }
@@ -660,6 +793,203 @@
 
             // Trigger preview update whenever dynamic settings change visibility/state
             handlePreviewUpdate();
+        }
+
+        // --- Text Box Drag and Resize Functionality ---
+
+        function initializeTextBox() {
+            // Get the visible preview image dimensions
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+
+            // Calculate position relative to preview area
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            // Default: bottom-middle position (20% from bottom)
+            const defaultWidth = Math.min(300, imgRect.width * 0.6);
+            const defaultHeight = Math.min(100, imgRect.height * 0.15);
+            const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
+            const defaultY = imgOffsetY + imgRect.height * 0.75;
+
+            textBoxState = {
+                x: defaultX,
+                y: defaultY,
+                width: defaultWidth,
+                height: defaultHeight
+            };
+
+            updateTextBoxPosition();
+        }
+
+        function updateTextBoxPosition() {
+            textBoxOverlay.style.left = textBoxState.x + 'px';
+            textBoxOverlay.style.top = textBoxState.y + 'px';
+            textBoxOverlay.style.width = textBoxState.width + 'px';
+            textBoxOverlay.style.height = textBoxState.height + 'px';
+        }
+
+        // Drag functionality
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let boxStartX = 0;
+        let boxStartY = 0;
+
+        textBoxOverlay.addEventListener('mousedown', (e) => {
+            // Only drag if not clicking on resize handles
+            if (e.target.classList.contains('resize-handle')) return;
+
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            boxStartX = textBoxState.x;
+            boxStartY = textBoxState.y;
+
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const deltaX = e.clientX - dragStartX;
+            const deltaY = e.clientY - dragStartY;
+
+            textBoxState.x = boxStartX + deltaX;
+            textBoxState.y = boxStartY + deltaY;
+
+            updateTextBoxPosition();
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+            }
+            if (isResizing) {
+                isResizing = false;
+                currentResizeHandle = null;
+            }
+        });
+
+        // Resize functionality
+        let isResizing = false;
+        let currentResizeHandle = null;
+        let resizeStartX = 0;
+        let resizeStartY = 0;
+        let boxStartWidth = 0;
+        let boxStartHeight = 0;
+
+        document.querySelectorAll('.resize-handle').forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                currentResizeHandle = handle.dataset.direction;
+                resizeStartX = e.clientX;
+                resizeStartY = e.clientY;
+                boxStartX = textBoxState.x;
+                boxStartY = textBoxState.y;
+                boxStartWidth = textBoxState.width;
+                boxStartHeight = textBoxState.height;
+
+                e.stopPropagation();
+                e.preventDefault();
+            });
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+
+            const deltaX = e.clientX - resizeStartX;
+            const deltaY = e.clientY - resizeStartY;
+
+            switch (currentResizeHandle) {
+                case 'se': // Bottom-right
+                    textBoxState.width = Math.max(100, boxStartWidth + deltaX);
+                    textBoxState.height = Math.max(50, boxStartHeight + deltaY);
+                    break;
+                case 'sw': // Bottom-left
+                    textBoxState.width = Math.max(100, boxStartWidth - deltaX);
+                    textBoxState.height = Math.max(50, boxStartHeight + deltaY);
+                    textBoxState.x = boxStartX + (boxStartWidth - textBoxState.width);
+                    break;
+                case 'ne': // Top-right
+                    textBoxState.width = Math.max(100, boxStartWidth + deltaX);
+                    textBoxState.height = Math.max(50, boxStartHeight - deltaY);
+                    textBoxState.y = boxStartY + (boxStartHeight - textBoxState.height);
+                    break;
+                case 'nw': // Top-left
+                    textBoxState.width = Math.max(100, boxStartWidth - deltaX);
+                    textBoxState.height = Math.max(50, boxStartHeight - deltaY);
+                    textBoxState.x = boxStartX + (boxStartWidth - textBoxState.width);
+                    textBoxState.y = boxStartY + (boxStartHeight - textBoxState.height);
+                    break;
+            }
+
+            updateTextBoxPosition();
+        });
+
+        // Update text box content when text input changes
+        function updateTextBoxContent() {
+            const textInput = document.getElementById('text');
+            if (textInput && textBoxOverlay.classList.contains('active')) {
+                textBoxContent.textContent = textInput.value || 'Your text here';
+
+                // Get all styling inputs
+                const fontSizeInput = document.getElementById('font_size');
+                const fontColorInput = document.getElementById('font_color');
+                const strokeWidthInput = document.getElementById('stroke_width');
+                const rectInput = document.getElementById('rect');
+                const fontNameInput = document.querySelector('input[name="font_name"]');
+
+                // Update font family
+                if (fontNameInput) {
+                    const fontName = fontNameInput.value;
+                    const fontMap = {
+                        'arial': 'Arial, sans-serif',
+                        'times': 'Times New Roman, serif',
+                        'georgia': 'Georgia, serif',
+                        'courier': 'Courier New, monospace',
+                        'verdana': 'Verdana, sans-serif',
+                        'tahoma': 'Tahoma, sans-serif',
+                        'trebuchet': 'Trebuchet MS, sans-serif',
+                        'impact': 'Impact, sans-serif',
+                        'comic_sans': 'Comic Sans MS, cursive'
+                    };
+                    textBoxContent.style.fontFamily = fontMap[fontName] || 'Arial, sans-serif';
+                }
+
+                // Update font size - use direct value for preview
+                if (fontSizeInput) {
+                    const fontSize = parseInt(fontSizeInput.value) || 32;
+                    textBoxContent.style.fontSize = fontSize + 'px';
+                }
+
+                // Update font color
+                if (fontColorInput) {
+                    textBoxContent.style.color = fontColorInput.value;
+                }
+
+                // Text is always centered in the draggable box
+                textBoxContent.style.textAlign = 'center';
+
+                // Update text stroke
+                if (strokeWidthInput) {
+                    const strokeWidth = parseInt(strokeWidthInput.value) || 0;
+                    if (strokeWidth > 0) {
+                        textBoxContent.style.webkitTextStroke = `${strokeWidth}px black`;
+                        textBoxContent.style.textShadow = 'none';
+                    } else {
+                        textBoxContent.style.webkitTextStroke = 'none';
+                        textBoxContent.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.8)';
+                    }
+                }
+
+                // Update background box
+                if (rectInput && rectInput.checked) {
+                    textBoxOverlay.style.background = 'rgba(0, 0, 0, 0.6)';
+                } else {
+                    textBoxOverlay.style.background = 'rgba(0, 123, 255, 0.1)';
+                }
+            }
         }
 
         async function handleInitialUpload(file) {
@@ -707,6 +1037,13 @@
 
                     previewSeq += 1;
                     await swapPreviewUrl(data.temp_image_url, previewSeq);
+
+                    // Disable click-to-upload and show "Upload New Picture" button
+                    imageUpload.classList.add('disabled');
+                    uploadNewBtn.style.display = 'block';
+
+                    // Initialize text box to default position (bottom-middle)
+                    initializeTextBox();
 
                     resetButton.disabled = false;
                     downloadButton.disabled = false;
@@ -791,6 +1128,12 @@
         async function handlePreviewUpdate() {
             if (!workingFilePath || !previewFilePath || !currentToolKey) return;
 
+            // IMPORTANT: Skip preview for subtitle tool - only render on Apply to avoid double text
+            if (currentToolKey === 'subtitle') {
+                applyButton.disabled = false; // Enable apply button when changes are made
+                return;
+            }
+
             // OPTIMIZATION: Check if the tool is "resize" and values match current dimensions.
             if (currentToolKey === 'resize') {
                 const widthInput = document.getElementById('width');
@@ -834,6 +1177,32 @@
                 }
                 options[input.name] = value;
             });
+
+            // For subtitle tool, calculate and send text box coordinates relative to image
+            if (currentToolKey === 'subtitle') {
+                const imgRect = previewImage.getBoundingClientRect();
+                const previewRect = previewArea.getBoundingClientRect();
+                const imgOffsetX = imgRect.left - previewRect.left;
+                const imgOffsetY = imgRect.top - previewRect.top;
+
+                // Convert text box position from preview area coordinates to image coordinates
+                const relX = textBoxState.x - imgOffsetX;
+                const relY = textBoxState.y - imgOffsetY;
+
+                // Calculate as percentage of image dimensions for backend
+                const xPercent = relX / imgRect.width;
+                const yPercent = relY / imgRect.height;
+                const widthPercent = textBoxState.width / imgRect.width;
+                const heightPercent = textBoxState.height / imgRect.height;
+
+                // Send as pixel coordinates based on actual image dimensions
+                options.box = [
+                    Math.round(xPercent * currentImageWidth),
+                    Math.round(yPercent * currentImageHeight),
+                    Math.round((xPercent + widthPercent) * currentImageWidth),
+                    Math.round((yPercent + heightPercent) * currentImageHeight)
+                ];
+            }
 
             formData.append('options', JSON.stringify(options));
 
@@ -879,6 +1248,103 @@
 
             loadingOverlay.style.display = 'flex';
 
+            // Special handling for subtitle tool - process directly with coordinates
+            if (currentToolKey === 'subtitle') {
+                const formData = new FormData();
+                formData.append('working_file_path', workingFilePath);
+                formData.append('current_preview_path', previewFilePath);
+                formData.append('tool_key', currentToolKey);
+
+                // Collect subtitle options
+                const options = {};
+                const settingInputs = toolSettingsDiv.querySelectorAll('input, select, textarea');
+
+                settingInputs.forEach(input => {
+                    let value;
+                    if (input.type === 'checkbox') {
+                        value = input.checked;
+                    } else {
+                        value = input.value;
+                    }
+                    options[input.name] = value;
+                });
+
+                // Calculate and add text box coordinates
+                const imgRect = previewImage.getBoundingClientRect();
+                const previewRect = previewArea.getBoundingClientRect();
+                const imgOffsetX = imgRect.left - previewRect.left;
+                const imgOffsetY = imgRect.top - previewRect.top;
+
+                const relX = textBoxState.x - imgOffsetX;
+                const relY = textBoxState.y - imgOffsetY;
+
+                const xPercent = relX / imgRect.width;
+                const yPercent = relY / imgRect.height;
+                const widthPercent = textBoxState.width / imgRect.width;
+                const heightPercent = textBoxState.height / imgRect.height;
+
+                options.box = [
+                    Math.round(xPercent * currentImageWidth),
+                    Math.round(yPercent * currentImageHeight),
+                    Math.round((xPercent + widthPercent) * currentImageWidth),
+                    Math.round((yPercent + heightPercent) * currentImageHeight)
+                ];
+
+                formData.append('options', JSON.stringify(options));
+
+                try {
+                    // Use preview endpoint to generate the subtitle image
+                    const response = await fetch('{% url "preview_image" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: formData,
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Now copy preview to working
+                        const copyFormData = new FormData();
+                        copyFormData.append('working_file_path', workingFilePath);
+                        copyFormData.append('preview_file_path', previewFilePath);
+
+                        const copyResponse = await fetch('{% url "process_image" %}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrftoken,
+                            },
+                            body: copyFormData,
+                        });
+
+                        const copyData = await copyResponse.json();
+
+                        if (copyData.success) {
+                            workingFilePath = copyData.working_file_path;
+
+                            // Update preview to show the final result
+                            previewSeq += 1;
+                            await swapPreviewUrl(copyData.temp_image_url + '?v=' + previewSeq, previewSeq);
+
+                            alert("Text successfully applied to the image.");
+                            applyButton.disabled = true;
+                        } else {
+                            alert('Error: ' + copyData.error);
+                        }
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    alert('An unexpected error occurred during processing.');
+                } finally {
+                    loadingOverlay.style.display = 'none';
+                }
+                return;
+            }
+
+            // Original logic for other tools
             const formData = new FormData();
             formData.append('working_file_path', workingFilePath); // Destination
             formData.append('preview_file_path', previewFilePath); // Source (What the user currently sees)
@@ -1041,6 +1507,11 @@
                 currentImageFile = file;
                 handleInitialUpload(file);
             }
+        });
+
+        // Upload New Picture Button Handler - Simply open file dialog
+        uploadNewBtn.addEventListener('click', () => {
+            imageUpload.click();
         });
 
         // 4. Drag-and-Drop Visual Feedback (using correct hex values)
