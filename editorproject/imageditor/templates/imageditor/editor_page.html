@@ -137,10 +137,29 @@
             z-index: 4;
         }
 
-        .resize-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
-        .resize-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
-        .resize-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
-        .resize-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+        .resize-handle.nw {
+            top: -6px;
+            left: -6px;
+            cursor: nw-resize;
+        }
+
+        .resize-handle.ne {
+            top: -6px;
+            right: -6px;
+            cursor: ne-resize;
+        }
+
+        .resize-handle.sw {
+            bottom: -6px;
+            left: -6px;
+            cursor: sw-resize;
+        }
+
+        .resize-handle.se {
+            bottom: -6px;
+            right: -6px;
+            cursor: se-resize;
+        }
 
         .upload-prompt {
             position: absolute;
@@ -159,8 +178,14 @@
             padding: 20px;
             box-sizing: border-box;
         }
-        .upload-prompt.hidden { display: none; }
-        .upload-prompt p { font-size: 1.1em; }
+
+        .upload-prompt.hidden {
+            display: none;
+        }
+
+        .upload-prompt p {
+            font-size: 1.1em;
+        }
 
         /* Two stacked preview images for seamless swapping (no fade) */
         #preview-image,
@@ -202,6 +227,7 @@
         .tool-list {
             margin-bottom: 20px;
         }
+
         .tool-button {
             display: block;
             width: 100%;
@@ -211,11 +237,15 @@
             border: none;
             border-radius: var(--border-radius);
             background-color: var(--bg-dark);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             cursor: pointer;
             transition: background-color 0.2s, box-shadow 0.2s;
         }
-        .tool-button:hover { background-color: #f0f0f5; }
+
+        .tool-button:hover {
+            background-color: #f0f0f5;
+        }
+
         .tool-button.active {
             background-color: var(--primary-color);
             color: white;
@@ -225,21 +255,28 @@
         .settings-content {
             flex-grow: 1;
         }
+
         .setting-group {
             padding: 10px 0;
             border-bottom: 1px solid #eee;
         }
-        .setting-group:last-child { border-bottom: none; }
+
+        .setting-group:last-child {
+            border-bottom: none;
+        }
+
         .setting-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
             font-size: 0.9em;
         }
+
         .setting-group input[type="range"] {
             width: 100%;
             margin: 8px 0;
         }
+
         .input-range-value {
             float: right;
             font-weight: normal;
@@ -252,6 +289,7 @@
             gap: 10px;
             margin-top: 10px;
         }
+
         .button-group .preset-btn {
             flex: 1;
             padding: 8px 10px;
@@ -263,14 +301,17 @@
             transition: background-color 0.2s, border-color 0.2s;
             font-size: 0.9em;
         }
+
         .button-group .preset-btn:hover {
             background-color: #f0f0f5;
             border-color: var(--primary-color);
         }
+
         /* FONT CAROUSEL STYLES */
         .font-carousel-container {
             margin-top: 10px;
         }
+
         .font-carousel {
             display: flex;
             overflow-x: auto;
@@ -278,26 +319,32 @@
             padding: 10px 0;
             scroll-behavior: smooth;
         }
+
         .font-carousel::-webkit-scrollbar {
             height: 8px;
         }
+
         .font-carousel::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 4px;
         }
+
         .font-carousel::-webkit-scrollbar-thumb {
             background: var(--secondary-color);
             border-radius: 4px;
         }
+
         .font-option {
             flex: 0 0 auto;
             text-align: center;
             cursor: pointer;
             transition: transform 0.2s;
         }
+
         .font-option:hover {
             transform: scale(1.05);
         }
+
         .font-preview-box {
             width: 90px;
             height: 90px;
@@ -310,15 +357,18 @@
             margin-bottom: 6px;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
+
         .font-preview-box img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
+
         .font-option.selected .font-preview-box {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
         }
+
         .font-label {
             font-size: 0.75em;
             color: #666;
@@ -327,16 +377,19 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
         .font-option.selected .font-label {
             color: var(--primary-color);
             font-weight: 600;
         }
+
         /* END NEW STYLES */
 
         .action-buttons {
             padding-top: 20px;
             border-top: 1px solid #ddd;
         }
+
         .action-buttons button {
             width: 100%;
             padding: 12px;
@@ -347,11 +400,26 @@
             cursor: pointer;
             transition: opacity 0.2s, background-color 0.2s;
         }
-        .action-buttons button:disabled { opacity: 0.5; cursor: default; }
 
-        .apply-btn { background-color: var(--success-color); color: white; }
-        .reset-btn { background-color: var(--secondary-color); color: white; }
-        .download-btn { background-color: var(--primary-color); color: white; }
+        .action-buttons button:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .apply-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .reset-btn {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .download-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
 
         .loading {
             position: absolute;
@@ -389,839 +457,935 @@
     </style>
 </head>
 <body>
-    <div class="editor-layout">
-        <div class="preview-area" id="preview-area">
-            <input type="file" id="image-upload" accept="image/*">
+<div class="editor-layout">
+    <div class="preview-area" id="preview-area">
+        <input type="file" id="image-upload" accept="image/*">
 
-            <div class="upload-prompt" id="upload-prompt">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" viewBox="0 0 16 16" style="margin-bottom: 10px;">
-                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a.5.5 0 0 0 .5.5h12a.5.5 0 0 0 .5-.5v-2.5a.5.5 0 0 1 1 0v2.5a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 0 12.9v-2.5a.5.5 0 0 1 .5-.5"/>
-                    <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V10.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z"/>
-                </svg>
-                <h3>Drop Image Here</h3>
-                <p>or click anywhere in this box to upload.</p>
-            </div>
-
-            <img id="preview-image" alt="Image Preview" draggable="false">
-            <img id="preview-image-buffer" alt="" aria-hidden="true" draggable="false">
-
-            <!-- Draggable Text Box for Subtitle Tool -->
-            <div class="text-box-overlay" id="text-box-overlay">
-                <div class="text-box-content" id="text-box-content">Your text here</div>
-                <div class="resize-handle nw" data-direction="nw"></div>
-                <div class="resize-handle ne" data-direction="ne"></div>
-                <div class="resize-handle sw" data-direction="sw"></div>
-                <div class="resize-handle se" data-direction="se"></div>
-            </div>
-
-            <!-- Upload New Picture Button -->
-            <button class="upload-new-btn" id="upload-new-btn">Upload New Picture</button>
-
-            <div class="loading" id="loading-overlay">Processing...</div>
+        <div class="upload-prompt" id="upload-prompt">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" viewBox="0 0 16 16"
+                 style="margin-bottom: 10px;">
+                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a.5.5 0 0 0 .5.5h12a.5.5 0 0 0 .5-.5v-2.5a.5.5 0 0 1 1 0v2.5a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 0 12.9v-2.5a.5.5 0 0 1 .5-.5"/>
+                <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V10.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z"/>
+            </svg>
+            <h3>Drop Image Here</h3>
+            <p>or click anywhere in this box to upload.</p>
         </div>
 
-        <div class="settings-panel">
-            <div class="tool-list">
-                <h3>Select Tool</h3>
-                {% for key, tool in template_tools.items %}
-                    <button class="tool-button" data-tool-key="{{ key }}">{{ tool.name }}</button>
-                {% endfor %}
-            </div>
+        <img id="preview-image" alt="Image Preview" draggable="false">
+        <img id="preview-image-buffer" alt="" aria-hidden="true" draggable="false">
 
-            <div class="settings-content">
-                <h4 id="settings-title">Tool Settings</h4>
-                <div id="tool-settings">
-                    <p>Upload an image and select a tool to start.</p>
-                </div>
-            </div>
-
-            <div class="action-buttons">
-                <button id="apply-button" class="apply-btn" disabled>Apply Changes</button>
-                <button id="reset-button" class="reset-btn" disabled>Reset Preview</button>
-                <button id="download-button" class="download-btn" disabled>Download Image</button>
-            </div>
+        <!-- Draggable Text Box for Subtitle Tool -->
+        <div class="text-box-overlay" id="text-box-overlay">
+            <div class="text-box-content" id="text-box-content">Your text here</div>
+            <div class="resize-handle nw" data-direction="nw"></div>
+            <div class="resize-handle ne" data-direction="ne"></div>
+            <div class="resize-handle sw" data-direction="sw"></div>
+            <div class="resize-handle se" data-direction="se"></div>
         </div>
+
+        <!-- Upload New Picture Button -->
+        <button class="upload-new-btn" id="upload-new-btn">Upload New Picture</button>
+
+        <div class="loading" id="loading-overlay">Processing...</div>
     </div>
 
+    <div class="settings-panel">
+        <div class="tool-list">
+            <h3>Select Tool</h3>
+            {% for key, tool in template_tools.items %}
+            <button class="tool-button" data-tool-key="{{ key }}">{{ tool.name }}</button>
+            {% endfor %}
+        </div>
+
+        <div class="settings-content">
+            <h4 id="settings-title">Tool Settings</h4>
+            <div id="tool-settings">
+                <p>Upload an image and select a tool to start.</p>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button id="apply-button" class="apply-btn" disabled>Apply Changes</button>
+            <button id="reset-button" class="reset-btn" disabled>Reset Preview</button>
+            <button id="download-button" class="download-btn" disabled>Download Image</button>
+        </div>
+    </div>
+</div>
+
 <script>
-        const imageUpload = document.getElementById('image-upload');
-        const uploadPrompt = document.getElementById('upload-prompt');
-        const previewImage = document.getElementById('preview-image');
-        const previewImageBuffer = document.getElementById('preview-image-buffer');
-        const previewArea = document.getElementById('preview-area');
-        const toolButtons = document.querySelectorAll('.tool-button');
-        const settingsTitle = document.getElementById('settings-title');
-        const toolSettingsDiv = document.getElementById('tool-settings');
-        const applyButton = document.getElementById('apply-button');
-        const resetButton = document.getElementById('reset-button');
-        const downloadButton = document.getElementById('download-button');
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const textBoxOverlay = document.getElementById('text-box-overlay');
-        const textBoxContent = document.getElementById('text-box-content');
-        const uploadNewBtn = document.getElementById('upload-new-btn');
+    const imageUpload = document.getElementById('image-upload');
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const previewImage = document.getElementById('preview-image');
+    const previewImageBuffer = document.getElementById('preview-image-buffer');
+    const previewArea = document.getElementById('preview-area');
+    const toolButtons = document.querySelectorAll('.tool-button');
+    const settingsTitle = document.getElementById('settings-title');
+    const toolSettingsDiv = document.getElementById('tool-settings');
+    const applyButton = document.getElementById('apply-button');
+    const resetButton = document.getElementById('reset-button');
+    const downloadButton = document.getElementById('download-button');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const textBoxOverlay = document.getElementById('text-box-overlay');
+    const textBoxContent = document.getElementById('text-box-content');
+    const uploadNewBtn = document.getElementById('upload-new-btn');
 
-        let currentImageFile = null;
+    let currentImageFile = null;
 
-        let originalFilePath = null; // Immutable source
-        let workingFilePath = null;  // Committed state (Source for Apply/Download)
-        let previewFilePath = null;  // Transient state (What the user sees during live preview)
+    let originalFilePath = null; // Immutable source
+    let workingFilePath = null;  // Committed state (Source for Apply/Download)
+    let previewFilePath = null;  // Transient state (What the user sees during live preview)
 
-        let currentToolKey = null;
+    let currentToolKey = null;
 
-        // NEW: Store dimensions of the currently uploaded image
-        let currentImageWidth = 0;
-        let currentImageHeight = 0;
+    // NEW: Store dimensions of the currently uploaded image
+    let currentImageWidth = 0;
+    let currentImageHeight = 0;
 
-        // Text box state (position and size relative to preview image)
-        let textBoxState = {
-            x: 0,      // X position in pixels
-            y: 0,      // Y position in pixels
-            width: 300,  // Width in pixels
-            height: 100  // Height in pixels
-        };
+    // Text box state (position and size relative to preview image)
+    let textBoxState = {
+        x: 0,      // X position in pixels
+        y: 0,      // Y position in pixels
+        width: 300,  // Width in pixels
+        height: 100  // Height in pixels
+    };
 
-        // Deep copy of the EDITOR_TOOLS config to safely modify defaults for the current session
-        const EDITOR_TOOLS_CONFIG = JSON.parse('{{ js_editor_tools|safe }}'.replace(/&quot;/g, '"'));
-        const EDITOR_TOOLS = JSON.parse(JSON.stringify(EDITOR_TOOLS_CONFIG)); // Deep copy
+    // Deep copy of the EDITOR_TOOLS config to safely modify defaults for the current session
+    const EDITOR_TOOLS_CONFIG = JSON.parse('{{ js_editor_tools|safe }}'.replace(/&quot;/g, '"'));
+    const EDITOR_TOOLS = JSON.parse(JSON.stringify(EDITOR_TOOLS_CONFIG)); // Deep copy
 
-        // --- Optimization: Debounce Utility ---
-        let debounceTimer;
-        let pendingUpdate = false;
+    // --- Optimization: Debounce Utility ---
+    let debounceTimer;
+    let pendingUpdate = false;
 
-        function debounce(func, delay) {
-            clearTimeout(debounceTimer);
-            pendingUpdate = true;
-            debounceTimer = setTimeout(() => {
-                pendingUpdate = false;
-                func();
-            }, delay);
-        }
+    function debounce(func, delay) {
+        clearTimeout(debounceTimer);
+        pendingUpdate = true;
+        debounceTimer = setTimeout(() => {
+            pendingUpdate = false;
+            func();
+        }, delay);
+    }
 
-        // --- Utility Functions ---
+    // --- Utility Functions ---
 
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
             }
-            return cookieValue;
         }
-        const csrftoken = getCookie('csrftoken');
+        return cookieValue;
+    }
 
-        function createSettingInput(option) {
-            const group = document.createElement('div');
-            group.className = 'setting-group';
-            if (option.hasOwnProperty('applies_to')) {
-                group.setAttribute('data-applies-to', option.applies_to.join(','));
-                group.style.display = 'none';
-            }
+    const csrftoken = getCookie('csrftoken');
 
-            const label = document.createElement('label');
-            label.setAttribute('for', option.id);
-            label.textContent = option.label;
+    function createSettingInput(option) {
+        const group = document.createElement('div');
+        group.className = 'setting-group';
+        if (option.hasOwnProperty('applies_to')) {
+            group.setAttribute('data-applies-to', option.applies_to.join(','));
+            group.style.display = 'none';
+        }
 
-            let input;
+        const label = document.createElement('label');
+        label.setAttribute('for', option.id);
+        label.textContent = option.label;
 
-            switch (option.type) {
-                case 'slider':
-                    input = document.createElement('input');
-                    input.type = 'range';
-                    input.id = option.id;
-                    input.name = option.id;
-                    input.min = option.min || 0;
-                    input.max = option.max || 100;
-                    input.step = option.step || 1;
-                    input.value = option.default;
+        let input;
 
-                    const valueDisplay = document.createElement('span');
-                    valueDisplay.className = 'input-range-value';
-                    valueDisplay.textContent = input.value;
-                    label.appendChild(valueDisplay);
+        switch (option.type) {
+            case 'slider':
+                input = document.createElement('input');
+                input.type = 'range';
+                input.id = option.id;
+                input.name = option.id;
+                input.min = option.min || 0;
+                input.max = option.max || 100;
+                input.step = option.step || 1;
+                input.value = option.default;
 
-                    input.addEventListener('input', (e) => {
-                        valueDisplay.textContent = e.target.value;
-                        debounce(handlePreviewUpdate, 150); // Live preview with debouncing
-                    });
-                    break;
-                case 'number':
-                    input = document.createElement('input');
-                    input.type = 'number';
-                    input.id = option.id;
-                    input.name = option.id;
-                    input.min = option.min || 1;
-                    if (option.hasOwnProperty('max')) input.max = option.max;
-                    input.value = option.default;
-                    input.addEventListener('input', () => {
-                        if (currentToolKey === 'subtitle') updateTextBoxContent();
-                        debounce(handlePreviewUpdate, 150);
-                    });
-                    break;
-                case 'text':
-                    input = document.createElement('textarea');
-                    input.id = option.id;
-                    input.name = option.id;
-                    input.value = option.default;
-                    input.addEventListener('input', () => {
-                        if (currentToolKey === 'subtitle') updateTextBoxContent();
-                        debounce(handlePreviewUpdate, 150);
-                    });
-                    break;
-                case 'color':
-                    input = document.createElement('input');
-                    input.type = 'color';
-                    input.id = option.id;
-                    input.name = option.id;
-                    input.value = option.default;
-                    input.addEventListener('input', () => {
-                        if (currentToolKey === 'subtitle') updateTextBoxContent();
-                        debounce(handlePreviewUpdate, 150);
-                    });
-                    break;
-                case 'checkbox':
-                    input = document.createElement('input');
-                    input.type = 'checkbox';
-                    input.id = option.id;
-                    input.name = option.id;
-                    input.checked = option.default;
-                    input.addEventListener('change', handlePreviewUpdate); // Change event for checkboxes
-                    break;
-                case 'select':
-                    input = document.createElement('select');
-                    input.id = option.id;
-                    input.name = option.id;
-                    option.choices.forEach(choice => {
-                        const optionElement = document.createElement('option');
-                        optionElement.value = choice.value;
-                        optionElement.textContent = choice.label;
-                        if (choice.value === option.default) {
-                            optionElement.selected = true;
+                const valueDisplay = document.createElement('span');
+                valueDisplay.className = 'input-range-value';
+                valueDisplay.textContent = input.value;
+                label.appendChild(valueDisplay);
+
+                input.addEventListener('input', (e) => {
+                    valueDisplay.textContent = e.target.value;
+                    debounce(handlePreviewUpdate, 150); // Live preview with debouncing
+                });
+                break;
+            case 'number':
+                input = document.createElement('input');
+                input.type = 'number';
+                input.id = option.id;
+                input.name = option.id;
+                input.min = option.min || 1;
+                if (option.hasOwnProperty('max')) input.max = option.max;
+                input.value = option.default;
+                input.addEventListener('input', () => {
+                    if (currentToolKey === 'subtitle') updateTextBoxContent();
+                    debounce(handlePreviewUpdate, 150);
+                });
+                break;
+            case 'text':
+                input = document.createElement('textarea');
+                input.id = option.id;
+                input.name = option.id;
+                input.value = option.default;
+                input.addEventListener('input', () => {
+                    if (currentToolKey === 'subtitle') updateTextBoxContent();
+                    debounce(handlePreviewUpdate, 150);
+                });
+                break;
+            case 'color':
+                input = document.createElement('input');
+                input.type = 'color';
+                input.id = option.id;
+                input.name = option.id;
+                input.value = option.default;
+                input.addEventListener('input', () => {
+                    if (currentToolKey === 'subtitle') updateTextBoxContent();
+                    debounce(handlePreviewUpdate, 150);
+                });
+                break;
+            case 'checkbox':
+                input = document.createElement('input');
+                input.type = 'checkbox';
+                input.id = option.id;
+                input.name = option.id;
+                input.checked = option.default;
+                input.addEventListener('change', handlePreviewUpdate); // Change event for checkboxes
+                break;
+            case 'select':
+                input = document.createElement('select');
+                input.id = option.id;
+                input.name = option.id;
+                option.choices.forEach(choice => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = choice.value;
+                    optionElement.textContent = choice.label;
+                    if (choice.value === option.default) {
+                        optionElement.selected = true;
+                    }
+                    input.appendChild(optionElement);
+                });
+                input.addEventListener('change', () => {
+                    if (currentToolKey === 'subtitle') updateTextBoxContent();
+                    handlePreviewUpdate();
+                }); // Change event for selects
+                break;
+            case 'button-group': // CASE for Preset Buttons
+                group.appendChild(label); // Keep the label for the group
+                const buttonGroupDiv = document.createElement('div');
+                buttonGroupDiv.className = 'button-group';
+
+                option.buttons.forEach(btnConfig => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'preset-btn';
+                    btn.textContent = btnConfig.label;
+                    btn.setAttribute('data-angle', btnConfig.value);
+
+                    btn.addEventListener('click', () => {
+                        // Find the main angle slider/input and its display span
+                        const angleInput = toolSettingsDiv.querySelector('#angle');
+                        const valueDisplay = toolSettingsDiv.querySelector('#angle').closest('.setting-group').querySelector('.input-range-value');
+                        const angleValue = parseInt(btn.getAttribute('data-angle'));
+
+                        if (angleInput) {
+                            angleInput.value = angleValue;
+                            // Update the visual display text (FIXED)
+                            if (valueDisplay) {
+                                valueDisplay.textContent = angleValue;
+                            }
+                            handlePreviewUpdate(); // Trigger the preview with the new angle
                         }
-                        input.appendChild(optionElement);
                     });
-                    input.addEventListener('change', () => {
+                    buttonGroupDiv.appendChild(btn);
+                });
+                group.appendChild(buttonGroupDiv);
+                return group; // Return the entire group for button-group type
+            case 'font-carousel':
+                group.appendChild(label);
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = option.id;
+                hiddenInput.name = option.id;
+                hiddenInput.value = option.default;
+                group.appendChild(hiddenInput);
+
+                const carouselContainer = document.createElement('div');
+                carouselContainer.className = 'font-carousel-container';
+                const carousel = document.createElement('div');
+                carousel.className = 'font-carousel';
+
+                option.fonts.forEach(font => {
+                    const fontOption = document.createElement('div');
+                    fontOption.className = 'font-option';
+                    if (font.value === option.default) {
+                        fontOption.classList.add('selected');
+                    }
+                    fontOption.setAttribute('data-font-value', font.value);
+
+                    const previewBox = document.createElement('div');
+                    previewBox.className = 'font-preview-box';
+                    const previewImg = document.createElement('img');
+                    previewImg.src = `/media/font_previews/${font.value}.png`;
+                    previewImg.alt = font.label;
+                    previewImg.onerror = function () {
+                        this.style.display = 'none';
+                        const fallbackText = document.createElement('div');
+                        fallbackText.textContent = 'Aa';
+                        fallbackText.style.fontSize = '32px';
+                        fallbackText.style.fontWeight = 'bold';
+                        fallbackText.style.color = '#333';
+                        previewBox.appendChild(fallbackText);
+                    };
+                    previewBox.appendChild(previewImg);
+
+                    const fontLabel = document.createElement('div');
+                    fontLabel.className = 'font-label';
+                    fontLabel.textContent = font.label;
+
+                    fontOption.appendChild(previewBox);
+                    fontOption.appendChild(fontLabel);
+                    fontOption.addEventListener('click', () => {
+                        carousel.querySelectorAll('.font-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        fontOption.classList.add('selected');
+                        hiddenInput.value = font.value;
                         if (currentToolKey === 'subtitle') updateTextBoxContent();
                         handlePreviewUpdate();
-                    }); // Change event for selects
-                    break;
-                case 'button-group': // CASE for Preset Buttons
-                    group.appendChild(label); // Keep the label for the group
-                    const buttonGroupDiv = document.createElement('div');
-                    buttonGroupDiv.className = 'button-group';
-
-                    option.buttons.forEach(btnConfig => {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'preset-btn';
-                        btn.textContent = btnConfig.label;
-                        btn.setAttribute('data-angle', btnConfig.value);
-
-                        btn.addEventListener('click', () => {
-                            // Find the main angle slider/input and its display span
-                            const angleInput = toolSettingsDiv.querySelector('#angle');
-                            const valueDisplay = toolSettingsDiv.querySelector('#angle').closest('.setting-group').querySelector('.input-range-value');
-                            const angleValue = parseInt(btn.getAttribute('data-angle'));
-
-                            if (angleInput) {
-                                angleInput.value = angleValue;
-                                // Update the visual display text (FIXED)
-                                if (valueDisplay) {
-                                    valueDisplay.textContent = angleValue;
-                                }
-                                handlePreviewUpdate(); // Trigger the preview with the new angle
-                            }
-                        });
-                        buttonGroupDiv.appendChild(btn);
                     });
-                    group.appendChild(buttonGroupDiv);
-                    return group; // Return the entire group for button-group type
-                case 'font-carousel':
-                    group.appendChild(label);
-                    const hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'hidden';
-                    hiddenInput.id = option.id;
-                    hiddenInput.name = option.id;
-                    hiddenInput.value = option.default;
-                    group.appendChild(hiddenInput);
-
-                    const carouselContainer = document.createElement('div');
-                    carouselContainer.className = 'font-carousel-container';
-                    const carousel = document.createElement('div');
-                    carousel.className = 'font-carousel';
-
-                    option.fonts.forEach(font => {
-                        const fontOption = document.createElement('div');
-                        fontOption.className = 'font-option';
-                        if (font.value === option.default) {
-                            fontOption.classList.add('selected');
-                        }
-                        fontOption.setAttribute('data-font-value', font.value);
-
-                        const previewBox = document.createElement('div');
-                        previewBox.className = 'font-preview-box';
-                        const previewImg = document.createElement('img');
-                        previewImg.src = `/media/font_previews/${font.value}.png`;
-                        previewImg.alt = font.label;
-                        previewImg.onerror = function() {
-                            this.style.display = 'none';
-                            const fallbackText = document.createElement('div');
-                            fallbackText.textContent = 'Aa';
-                            fallbackText.style.fontSize = '32px';
-                            fallbackText.style.fontWeight = 'bold';
-                            fallbackText.style.color = '#333';
-                            previewBox.appendChild(fallbackText);
-                        };
-                        previewBox.appendChild(previewImg);
-
-                        const fontLabel = document.createElement('div');
-                        fontLabel.className = 'font-label';
-                        fontLabel.textContent = font.label;
-
-                        fontOption.appendChild(previewBox);
-                        fontOption.appendChild(fontLabel);
-                        fontOption.addEventListener('click', () => {
-                            carousel.querySelectorAll('.font-option').forEach(opt => {
-                                opt.classList.remove('selected');
-                            });
-                            fontOption.classList.add('selected');
-                            hiddenInput.value = font.value;
-                            if (currentToolKey === 'subtitle') updateTextBoxContent();
-                            handlePreviewUpdate();
-                        });
-                        carousel.appendChild(fontOption);
-                    });
-
-                    carouselContainer.appendChild(carousel);
-                    group.appendChild(carouselContainer);
-                    return group;
-                default:
-                    return null;
-            }
-
-            group.appendChild(label);
-            group.appendChild(input);
-            return group;
-        }
-
-        // NEW: Function to find an option by ID and update its default value
-        function updateToolDefault(toolKey, optionId, newValue) {
-            const toolConfig = EDITOR_TOOLS[toolKey];
-            if (!toolConfig) return;
-
-            const option = toolConfig.options.find(opt => opt.id === optionId);
-            if (option) {
-                option.default = newValue;
-            }
-        }
-
-        // --- Core Logic ---
-
-        function renderSettings(toolKey) {
-            currentToolKey = toolKey;
-
-            // Show/hide text box overlay for subtitle tool
-            if (toolKey === 'subtitle') {
-                textBoxOverlay.classList.add('active');
-            } else {
-                textBoxOverlay.classList.remove('active');
-            }
-
-            // 1. DYNAMIC DEFAULT UPDATE
-            if (toolKey === 'resize' && currentImageWidth > 0 && currentImageHeight > 0) {
-                // Set defaults to current dimensions (ensures a neutral state)
-                updateToolDefault('resize', 'width', currentImageWidth);
-                updateToolDefault('resize', 'height', currentImageHeight);
-            }
-
-            // 2. Clear and Render
-            toolSettingsDiv.innerHTML = '';
-
-            const toolConfig = EDITOR_TOOLS[toolKey];
-            settingsTitle.textContent = toolConfig.name + " Settings";
-
-            let filterSelect = null;
-
-            toolConfig.options.forEach(option => {
-                // The createSettingInput function now uses the potentially updated 'option.default' value
-                const inputGroup = createSettingInput(option);
-                if (inputGroup) {
-                    toolSettingsDiv.appendChild(inputGroup);
-
-                    if (option.id === 'filter' && option.type === 'select') {
-                        filterSelect = inputGroup.querySelector('select');
-                    }
-                }
-            });
-
-            if (filterSelect) {
-                updateDynamicSettings(filterSelect.value);
-                filterSelect.addEventListener('change', (e) => {
-                    updateDynamicSettings(e.target.value);
+                    carousel.appendChild(fontOption);
                 });
-            }
 
-            // Initialize text box content for subtitle tool after all inputs are created
-            if (toolKey === 'subtitle') {
-                updateTextBoxContent();
-            }
-
-            // Trigger an immediate preview update when tool settings are rendered/selected
-            handlePreviewUpdate();
+                carouselContainer.appendChild(carousel);
+                group.appendChild(carouselContainer);
+                return group;
+            default:
+                return null;
         }
 
-        function updateDynamicSettings(currentFilterValue) {
-            const dynamicSettings = toolSettingsDiv.querySelectorAll('.setting-group[data-applies-to]');
+        group.appendChild(label);
+        group.appendChild(input);
+        return group;
+    }
 
-            dynamicSettings.forEach(group => {
-                const appliesTo = group.getAttribute('data-applies-to').split(',');
-                const shouldShow = appliesTo.includes(currentFilterValue);
-                group.style.display = shouldShow ? 'block' : 'none';
+    // NEW: Function to find an option by ID and update its default value
+    function updateToolDefault(toolKey, optionId, newValue) {
+        const toolConfig = EDITOR_TOOLS[toolKey];
+        if (!toolConfig) return;
 
-                if (shouldShow && group.querySelector('input[type="range"]')) {
-                     const rangeInput = group.querySelector('input[type="range"]');
-                     const valueDisplay = group.querySelector('.input-range-value');
-                     if (valueDisplay) {
-                        valueDisplay.textContent = rangeInput.value;
-                     }
+        const option = toolConfig.options.find(opt => opt.id === optionId);
+        if (option) {
+            option.default = newValue;
+        }
+    }
+
+    // --- Core Logic ---
+
+    function renderSettings(toolKey) {
+        currentToolKey = toolKey;
+
+        // Show/hide text box overlay for subtitle tool
+        if (toolKey === 'subtitle') {
+            textBoxOverlay.classList.add('active');
+        } else {
+            textBoxOverlay.classList.remove('active');
+        }
+
+        // 1. DYNAMIC DEFAULT UPDATE
+        if (toolKey === 'resize' && currentImageWidth > 0 && currentImageHeight > 0) {
+            // Set defaults to current dimensions (ensures a neutral state)
+            updateToolDefault('resize', 'width', currentImageWidth);
+            updateToolDefault('resize', 'height', currentImageHeight);
+        }
+
+        // 2. Clear and Render
+        toolSettingsDiv.innerHTML = '';
+
+        const toolConfig = EDITOR_TOOLS[toolKey];
+        settingsTitle.textContent = toolConfig.name + " Settings";
+
+        let filterSelect = null;
+
+        toolConfig.options.forEach(option => {
+            // The createSettingInput function now uses the potentially updated 'option.default' value
+            const inputGroup = createSettingInput(option);
+            if (inputGroup) {
+                toolSettingsDiv.appendChild(inputGroup);
+
+                if (option.id === 'filter' && option.type === 'select') {
+                    filterSelect = inputGroup.querySelector('select');
                 }
+            }
+        });
+
+        if (filterSelect) {
+            updateDynamicSettings(filterSelect.value);
+            filterSelect.addEventListener('change', (e) => {
+                updateDynamicSettings(e.target.value);
             });
-
-            // Trigger preview update whenever dynamic settings change visibility/state
-            handlePreviewUpdate();
         }
 
-        // --- Text Box Drag and Resize Functionality ---
-
-        function initializeTextBox() {
-            // Get the visible preview image dimensions
-            const imgRect = previewImage.getBoundingClientRect();
-            const previewRect = previewArea.getBoundingClientRect();
-
-            // Calculate position relative to preview area
-            const imgOffsetX = imgRect.left - previewRect.left;
-            const imgOffsetY = imgRect.top - previewRect.top;
-
-            // Default: bottom-middle position (20% from bottom)
-            const defaultWidth = Math.min(300, imgRect.width * 0.6);
-            const defaultHeight = Math.min(100, imgRect.height * 0.15);
-            const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
-            const defaultY = imgOffsetY + imgRect.height * 0.75;
-
-            textBoxState = {
-                x: defaultX,
-                y: defaultY,
-                width: defaultWidth,
-                height: defaultHeight
-            };
-
-            updateTextBoxPosition();
+        // Initialize text box content for subtitle tool after all inputs are created
+        if (toolKey === 'subtitle') {
+            updateTextBoxContent();
         }
 
-        function updateTextBoxPosition() {
-            // Get image boundaries
-            const imgRect = previewImage.getBoundingClientRect();
-            const previewRect = previewArea.getBoundingClientRect();
-            const imgOffsetX = imgRect.left - previewRect.left;
-            const imgOffsetY = imgRect.top - previewRect.top;
+        // Trigger an immediate preview update when tool settings are rendered/selected
+        handlePreviewUpdate();
+    }
 
-            // Constrain text box to stay within image boundaries
-            const minX = imgOffsetX;
-            const minY = imgOffsetY;
-            const maxX = imgOffsetX + imgRect.width - textBoxState.width;
-            const maxY = imgOffsetY + imgRect.height - textBoxState.height;
+    function updateDynamicSettings(currentFilterValue) {
+        const dynamicSettings = toolSettingsDiv.querySelectorAll('.setting-group[data-applies-to]');
 
-            // Apply constraints
-            textBoxState.x = Math.max(minX, Math.min(maxX, textBoxState.x));
-            textBoxState.y = Math.max(minY, Math.min(maxY, textBoxState.y));
+        dynamicSettings.forEach(group => {
+            const appliesTo = group.getAttribute('data-applies-to').split(',');
+            const shouldShow = appliesTo.includes(currentFilterValue);
+            group.style.display = shouldShow ? 'block' : 'none';
 
-            // Update DOM
-            textBoxOverlay.style.left = textBoxState.x + 'px';
-            textBoxOverlay.style.top = textBoxState.y + 'px';
-            textBoxOverlay.style.width = textBoxState.width + 'px';
-            textBoxOverlay.style.height = textBoxState.height + 'px';
+            if (shouldShow && group.querySelector('input[type="range"]')) {
+                const rangeInput = group.querySelector('input[type="range"]');
+                const valueDisplay = group.querySelector('.input-range-value');
+                if (valueDisplay) {
+                    valueDisplay.textContent = rangeInput.value;
+                }
+            }
+        });
+
+        // Trigger preview update whenever dynamic settings change visibility/state
+        handlePreviewUpdate();
+    }
+
+    // --- Text Box Drag and Resize Functionality ---
+
+    function initializeTextBox() {
+        // Get the visible preview image dimensions
+        const imgRect = previewImage.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+
+        // Calculate position relative to preview area
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Default: bottom-middle position (20% from bottom)
+        const defaultWidth = Math.min(300, imgRect.width * 0.6);
+        const defaultHeight = Math.min(100, imgRect.height * 0.15);
+        const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
+        const defaultY = imgOffsetY + imgRect.height * 0.75;
+
+        textBoxState = {
+            x: defaultX,
+            y: defaultY,
+            width: defaultWidth,
+            height: defaultHeight
+        };
+
+        updateTextBoxPosition();
+    }
+
+    function updateTextBoxPosition() {
+        // Get image boundaries
+        const imgRect = previewImage.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Constrain text box to stay within image boundaries
+        const minX = imgOffsetX;
+        const minY = imgOffsetY;
+        const maxX = imgOffsetX + imgRect.width - textBoxState.width;
+        const maxY = imgOffsetY + imgRect.height - textBoxState.height;
+
+        // Apply constraints
+        textBoxState.x = Math.max(minX, Math.min(maxX, textBoxState.x));
+        textBoxState.y = Math.max(minY, Math.min(maxY, textBoxState.y));
+
+        // Update DOM
+        textBoxOverlay.style.left = textBoxState.x + 'px';
+        textBoxOverlay.style.top = textBoxState.y + 'px';
+        textBoxOverlay.style.width = textBoxState.width + 'px';
+        textBoxOverlay.style.height = textBoxState.height + 'px';
+    }
+
+
+    // Drag functionality
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let boxStartX = 0;
+    let boxStartY = 0;
+
+    textBoxOverlay.addEventListener('mousedown', (e) => {
+        // Only drag if not clicking on resize handles
+        if (e.target.classList.contains('resize-handle')) return;
+
+        isDragging = true;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        boxStartX = textBoxState.x;
+        boxStartY = textBoxState.y;
+
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+
+        const deltaX = e.clientX - dragStartX;
+        const deltaY = e.clientY - dragStartY;
+
+        textBoxState.x = boxStartX + deltaX;
+        textBoxState.y = boxStartY + deltaY;
+
+        updateTextBoxPosition();
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
         }
+        if (isResizing) {
+            isResizing = false;
+            currentResizeHandle = null;
+        }
+    });
 
+    // Resize functionality
+    let isResizing = false;
+    let currentResizeHandle = null;
+    let resizeStartX = 0;
+    let resizeStartY = 0;
+    let boxStartWidth = 0;
+    let boxStartHeight = 0;
 
-        // Drag functionality
-        let isDragging = false;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let boxStartX = 0;
-        let boxStartY = 0;
-
-        textBoxOverlay.addEventListener('mousedown', (e) => {
-            // Only drag if not clicking on resize handles
-            if (e.target.classList.contains('resize-handle')) return;
-
-            isDragging = true;
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
+    document.querySelectorAll('.resize-handle').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            currentResizeHandle = handle.dataset.direction;
+            resizeStartX = e.clientX;
+            resizeStartY = e.clientY;
             boxStartX = textBoxState.x;
             boxStartY = textBoxState.y;
+            boxStartWidth = textBoxState.width;
+            boxStartHeight = textBoxState.height;
 
+            e.stopPropagation();
             e.preventDefault();
         });
+    });
 
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
 
-            const deltaX = e.clientX - dragStartX;
-            const deltaY = e.clientY - dragStartY;
+        const deltaX = e.clientX - resizeStartX;
+        const deltaY = e.clientY - resizeStartY;
 
-            textBoxState.x = boxStartX + deltaX;
-            textBoxState.y = boxStartY + deltaY;
+        switch (currentResizeHandle) {
+            case 'se': // Bottom-right
+                textBoxState.width = Math.max(100, boxStartWidth + deltaX);
+                textBoxState.height = Math.max(50, boxStartHeight + deltaY);
+                break;
+            case 'sw': // Bottom-left
+                textBoxState.width = Math.max(100, boxStartWidth - deltaX);
+                textBoxState.height = Math.max(50, boxStartHeight + deltaY);
+                textBoxState.x = boxStartX + (boxStartWidth - textBoxState.width);
+                break;
+            case 'ne': // Top-right
+                textBoxState.width = Math.max(100, boxStartWidth + deltaX);
+                textBoxState.height = Math.max(50, boxStartHeight - deltaY);
+                textBoxState.y = boxStartY + (boxStartHeight - textBoxState.height);
+                break;
+            case 'nw': // Top-left
+                textBoxState.width = Math.max(100, boxStartWidth - deltaX);
+                textBoxState.height = Math.max(50, boxStartHeight - deltaY);
+                textBoxState.x = boxStartX + (boxStartWidth - textBoxState.width);
+                textBoxState.y = boxStartY + (boxStartHeight - textBoxState.height);
+                break;
+        }
 
-            updateTextBoxPosition();
-        });
+        updateTextBoxPosition();
+    });
 
-        document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
+    // Update text box content when text input changes
+    // Wrap text exactly like the backend does (split by spaces, measure width)
+    function wrapTextLikeBackend(text, maxWidth, fontSize, fontFamily) {
+        if (!text) return [''];
+
+        // Create a temporary canvas to measure text width
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.font = `${fontSize}px ${fontFamily}`;
+
+        const words = text.split(/\s+/);
+        if (words.length === 0) return [''];
+
+        const lines = [];
+        let line = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            const testLine = line + ' ' + words[i];
+            const metrics = ctx.measureText(testLine);
+
+            if (metrics.width <= maxWidth) {
+                line = testLine;
+            } else {
+                lines.push(line);
+                line = words[i];
             }
-            if (isResizing) {
-                isResizing = false;
-                currentResizeHandle = null;
+        }
+        lines.push(line);
+        return lines;
+    }
+
+    // Update text box content when text input changes
+    function updateTextBoxContent() {
+        const textInput = document.getElementById('text');
+        if (textInput && textBoxOverlay.classList.contains('active')) {
+            const text = textInput.value || 'Your text here';
+
+            // Get all styling inputs
+            const fontSizeInput = document.getElementById('font_size');
+            const fontColorInput = document.getElementById('font_color');
+            const strokeWidthInput = document.getElementById('stroke_width');
+            const rectInput = document.getElementById('rect');
+            const fontNameInput = document.querySelector('input[name="font_name"]');
+
+            // Get font settings
+            let fontFamily = 'Arial, sans-serif';
+            if (fontNameInput) {
+                const fontName = fontNameInput.value;
+                const fontMap = {
+                    'arial': 'Arial, sans-serif',
+                    'times': 'Times New Roman, serif',
+                    'georgia': 'Georgia, serif',
+                    'courier': 'Courier New, monospace',
+                    'verdana': 'Verdana, sans-serif',
+                    'tahoma': 'Tahoma, sans-serif',
+                    'trebuchet': 'Trebuchet MS, sans-serif',
+                    'impact': 'Impact, sans-serif',
+                    'comic_sans': 'Comic Sans MS, cursive'
+                };
+                fontFamily = fontMap[fontName] || 'Arial, sans-serif';
+                textBoxContent.style.fontFamily = fontFamily;
             }
-        });
 
-        // Resize functionality
-        let isResizing = false;
-        let currentResizeHandle = null;
-        let resizeStartX = 0;
-        let resizeStartY = 0;
-        let boxStartWidth = 0;
-        let boxStartHeight = 0;
+            // Get font size
+            const fontSize = fontSizeInput ? (parseInt(fontSizeInput.value) || 32) : 32;
+            textBoxContent.style.fontSize = fontSize + 'px';
 
-        document.querySelectorAll('.resize-handle').forEach(handle => {
-            handle.addEventListener('mousedown', (e) => {
-                isResizing = true;
-                currentResizeHandle = handle.dataset.direction;
-                resizeStartX = e.clientX;
-                resizeStartY = e.clientY;
-                boxStartX = textBoxState.x;
-                boxStartY = textBoxState.y;
-                boxStartWidth = textBoxState.width;
-                boxStartHeight = textBoxState.height;
+            // Calculate available width for text (account for padding)
+            const availableWidth = textBoxState.width - 20; // 10px padding on each side
 
-                e.stopPropagation();
-                e.preventDefault();
+            // Wrap text exactly like backend does
+            const wrappedLines = wrapTextLikeBackend(text, availableWidth, fontSize, fontFamily);
+            textBoxContent.textContent = wrappedLines.join('\n');
+
+            // Update font color
+            if (fontColorInput) {
+                textBoxContent.style.color = fontColorInput.value;
+            }
+
+            // Text is always centered in the draggable box
+            textBoxContent.style.textAlign = 'center';
+
+            // Update text stroke
+            if (strokeWidthInput) {
+                const strokeWidth = parseInt(strokeWidthInput.value) || 0;
+                if (strokeWidth > 0) {
+                    textBoxContent.style.webkitTextStroke = `${strokeWidth}px black`;
+                    textBoxContent.style.textShadow = 'none';
+                } else {
+                    textBoxContent.style.webkitTextStroke = 'none';
+                    textBoxContent.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.8)';
+                }
+            }
+
+            // Update background box
+            if (rectInput && rectInput.checked) {
+                textBoxOverlay.style.background = 'rgba(0, 0, 0, 0.6)';
+            } else {
+                textBoxOverlay.style.background = 'rgba(0, 123, 255, 0.1)';
+            }
+        }
+    }
+
+    async function handleInitialUpload(file) {
+        loadingOverlay.style.display = 'flex';
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        // OPTIMIZATION: Send old file paths for session cleanup if they exist
+        if (originalFilePath) {
+            formData.append('old_original_path', originalFilePath);
+        }
+        if (workingFilePath) {
+            formData.append('old_working_path', workingFilePath);
+        }
+        if (previewFilePath) {
+            formData.append('old_preview_path', previewFilePath);
+        }
+
+        try {
+            const response = await fetch('{% url "initial_upload" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body: formData,
             });
-        });
 
-        document.addEventListener('mousemove', (e) => {
-            if (!isResizing) return;
+            const data = await response.json();
 
-            const deltaX = e.clientX - resizeStartX;
-            const deltaY = e.clientY - resizeStartY;
+            if (data.success) {
+                originalFilePath = data.original_file_path;
+                workingFilePath = data.working_file_path;
+                previewFilePath = data.preview_file_path;
 
-            switch (currentResizeHandle) {
-                case 'se': // Bottom-right
-                    textBoxState.width = Math.max(100, boxStartWidth + deltaX);
-                    textBoxState.height = Math.max(50, boxStartHeight + deltaY);
-                    break;
-                case 'sw': // Bottom-left
-                    textBoxState.width = Math.max(100, boxStartWidth - deltaX);
-                    textBoxState.height = Math.max(50, boxStartHeight + deltaY);
-                    textBoxState.x = boxStartX + (boxStartWidth - textBoxState.width);
-                    break;
-                case 'ne': // Top-right
-                    textBoxState.width = Math.max(100, boxStartWidth + deltaX);
-                    textBoxState.height = Math.max(50, boxStartHeight - deltaY);
-                    textBoxState.y = boxStartY + (boxStartHeight - textBoxState.height);
-                    break;
-                case 'nw': // Top-left
-                    textBoxState.width = Math.max(100, boxStartWidth - deltaX);
-                    textBoxState.height = Math.max(50, boxStartHeight - deltaY);
-                    textBoxState.x = boxStartX + (boxStartWidth - textBoxState.width);
-                    textBoxState.y = boxStartY + (boxStartHeight - textBoxState.height);
-                    break;
+                // NEW: Store dimensions
+                currentImageWidth = data.image_width;
+                currentImageHeight = data.image_height;
+
+                uploadPrompt.classList.add('hidden');
+
+                // Show both (we control visibility)
+                previewImage.style.display = 'block';
+                previewImageBuffer.style.display = 'block';
+
+                previewSeq += 1;
+                await swapPreviewUrl(data.temp_image_url, previewSeq);
+
+                // Disable click-to-upload and show "Upload New Picture" button
+                imageUpload.classList.add('disabled');
+                uploadNewBtn.style.display = 'block';
+
+                // Initialize text box to default position (bottom-middle)
+                initializeTextBox();
+
+                resetButton.disabled = false;
+                downloadButton.disabled = false;
+
+                toolButtons.forEach(btn => btn.classList.remove('active'));
+                settingsTitle.textContent = "Select a Tool";
+                toolSettingsDiv.innerHTML = '<p>Select a tool on the left to adjust settings.</p>';
+                applyButton.disabled = true;
+                currentToolKey = null;
+
+            } else {
+                alert('Upload Error: ' + data.error);
             }
-
-            updateTextBoxPosition();
-        });
-
-        // Update text box content when text input changes
-                // Wrap text exactly like the backend does (split by spaces, measure width)
-        function wrapTextLikeBackend(text, maxWidth, fontSize, fontFamily) {
-            if (!text) return [''];
-
-            // Create a temporary canvas to measure text width
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.font = `${fontSize}px ${fontFamily}`;
-
-            const words = text.split(/\s+/);
-            if (words.length === 0) return [''];
-
-            const lines = [];
-            let line = words[0];
-
-            for (let i = 1; i < words.length; i++) {
-                const testLine = line + ' ' + words[i];
-                const metrics = ctx.measureText(testLine);
-
-                if (metrics.width <= maxWidth) {
-                    line = testLine;
-                } else {
-                    lines.push(line);
-                    line = words[i];
-                }
-            }
-            lines.push(line);
-            return lines;
+        } catch (error) {
+            console.error('Initial upload fetch error:', error);
+            alert('An unexpected error occurred during initial upload.');
+        } finally {
+            loadingOverlay.style.display = 'none';
         }
+    }
 
-        // Update text box content when text input changes
-        function updateTextBoxContent() {
-            const textInput = document.getElementById('text');
-            if (textInput && textBoxOverlay.classList.contains('active')) {
-                const text = textInput.value || 'Your text here';
+    // --- Seamless preview swapping (no fade, no flash) ---
+    let previewActiveIsPrimary = true;
+    let previewSeq = 0;
+    let previewAbortController = null;
 
-                // Get all styling inputs
-                const fontSizeInput = document.getElementById('font_size');
-                const fontColorInput = document.getElementById('font_color');
-                const strokeWidthInput = document.getElementById('stroke_width');
-                const rectInput = document.getElementById('rect');
-                const fontNameInput = document.querySelector('input[name="font_name"]');
-
-                // Get font settings
-                let fontFamily = 'Arial, sans-serif';
-                if (fontNameInput) {
-                    const fontName = fontNameInput.value;
-                    const fontMap = {
-                        'arial': 'Arial, sans-serif',
-                        'times': 'Times New Roman, serif',
-                        'georgia': 'Georgia, serif',
-                        'courier': 'Courier New, monospace',
-                        'verdana': 'Verdana, sans-serif',
-                        'tahoma': 'Tahoma, sans-serif',
-                        'trebuchet': 'Trebuchet MS, sans-serif',
-                        'impact': 'Impact, sans-serif',
-                        'comic_sans': 'Comic Sans MS, cursive'
-                    };
-                    fontFamily = fontMap[fontName] || 'Arial, sans-serif';
-                    textBoxContent.style.fontFamily = fontFamily;
-                }
-
-                // Get font size
-                const fontSize = fontSizeInput ? (parseInt(fontSizeInput.value) || 32) : 32;
-                textBoxContent.style.fontSize = fontSize + 'px';
-
-                // Calculate available width for text (account for padding)
-                const availableWidth = textBoxState.width - 20; // 10px padding on each side
-
-                // Wrap text exactly like backend does
-                const wrappedLines = wrapTextLikeBackend(text, availableWidth, fontSize, fontFamily);
-                textBoxContent.textContent = wrappedLines.join('\n');
-
-                // Update font color
-                if (fontColorInput) {
-                    textBoxContent.style.color = fontColorInput.value;
-                }
-
-                // Text is always centered in the draggable box
-                textBoxContent.style.textAlign = 'center';
-
-                // Update text stroke
-                if (strokeWidthInput) {
-                    const strokeWidth = parseInt(strokeWidthInput.value) || 0;
-                    if (strokeWidth > 0) {
-                        textBoxContent.style.webkitTextStroke = `${strokeWidth}px black`;
-                        textBoxContent.style.textShadow = 'none';
-                    } else {
-                        textBoxContent.style.webkitTextStroke = 'none';
-                        textBoxContent.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.8)';
-                    }
-                }
-
-                // Update background box
-                if (rectInput && rectInput.checked) {
-                    textBoxOverlay.style.background = 'rgba(0, 0, 0, 0.6)';
+    function _waitForImgLoad(imgEl) {
+        return new Promise((resolve, reject) => {
+            if (imgEl.complete && imgEl.naturalWidth > 0) return resolve();
+            imgEl.onload = () => resolve();
+            imgEl.onerror = () => reject(new Error('Image failed to load'));
+            // Timeout fallback to prevent infinite waiting
+            setTimeout(() => {
+                if (imgEl.complete && imgEl.naturalWidth > 0) {
+                    resolve();
                 } else {
-                    textBoxOverlay.style.background = 'rgba(0, 123, 255, 0.1)';
+                    reject(new Error('Image load timeout'));
                 }
-            }
-        }
+            }, 10000); // 10 second timeout
+        });
+    }
 
-        async function handleInitialUpload(file) {
-            loadingOverlay.style.display = 'flex';
-
-            const formData = new FormData();
-            formData.append('image', file);
-
-            // OPTIMIZATION: Send old file paths for session cleanup if they exist
-            if (originalFilePath) {
-                formData.append('old_original_path', originalFilePath);
-            }
-            if (workingFilePath) {
-                formData.append('old_working_path', workingFilePath);
-            }
-            if (previewFilePath) {
-                formData.append('old_preview_path', previewFilePath);
-            }
-
+    async function _decodeIfPossible(imgEl) {
+        if (typeof imgEl.decode === 'function') {
             try {
-                const response = await fetch('{% url "initial_upload" %}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken,
-                    },
-                    body: formData,
-                });
+                await imgEl.decode();
+            } catch (err) {
+                // Image decode failed, but we can still display it
+                console.warn('Image decode failed:', err);
+            }
+        }
+    }
 
-                const data = await response.json();
+    async function swapPreviewUrl(url, seqToken) {
+        // If a newer request started, ignore this one
+        if (seqToken !== previewSeq) return;
 
-                if (data.success) {
-                    originalFilePath = data.original_file_path;
-                    workingFilePath = data.working_file_path;
-                    previewFilePath = data.preview_file_path;
+        const front = previewActiveIsPrimary ? previewImage : previewImageBuffer;
+        const back = previewActiveIsPrimary ? previewImageBuffer : previewImage;
 
-                    // NEW: Store dimensions
-                    currentImageWidth = data.image_width;
-                    currentImageHeight = data.image_height;
+        // Ensure both are in the layout; we hide via visibility to avoid flicker
+        front.style.display = 'block';
+        back.style.display = 'block';
 
-                    uploadPrompt.classList.add('hidden');
+        // Load into the hidden one
+        back.style.visibility = 'hidden';
+        back.src = url;
 
-                    // Show both (we control visibility)
-                    previewImage.style.display = 'block';
-                    previewImageBuffer.style.display = 'block';
+        await _waitForImgLoad(back);
+        await _decodeIfPossible(back);
 
-                    previewSeq += 1;
-                    await swapPreviewUrl(data.temp_image_url, previewSeq);
+        // Ignore if stale after await
+        if (seqToken !== previewSeq) return;
 
-                    // Disable click-to-upload and show "Upload New Picture" button
-                    imageUpload.classList.add('disabled');
-                    uploadNewBtn.style.display = 'block';
+        // Atomic swap
+        back.style.visibility = 'visible';
+        front.style.visibility = 'hidden';
+        previewActiveIsPrimary = !previewActiveIsPrimary;
+    }
 
-                    // Initialize text box to default position (bottom-middle)
-                    initializeTextBox();
+    // NEW FUNCTION: Handles live preview updates without committing
+    async function handlePreviewUpdate() {
+        if (!workingFilePath || !previewFilePath || !currentToolKey) return;
 
-                    resetButton.disabled = false;
-                    downloadButton.disabled = false;
+        // IMPORTANT: Skip preview for subtitle tool - only render on Apply to avoid double text
+        if (currentToolKey === 'subtitle') {
+            applyButton.disabled = false; // Enable apply button when changes are made
+            return;
+        }
 
-                    toolButtons.forEach(btn => btn.classList.remove('active'));
-                    settingsTitle.textContent = "Select a Tool";
-                    toolSettingsDiv.innerHTML = '<p>Select a tool on the left to adjust settings.</p>';
-                    applyButton.disabled = true;
-                    currentToolKey = null;
+        // OPTIMIZATION: Check if the tool is "resize" and values match current dimensions.
+        if (currentToolKey === 'resize') {
+            const widthInput = document.getElementById('width');
+            const heightInput = document.getElementById('height');
 
-                } else {
-                    alert('Upload Error: ' + data.error);
+            if (widthInput && heightInput) {
+                const currentW = parseInt(widthInput.value);
+                const currentH = parseInt(heightInput.value);
+                if (currentW === currentImageWidth && currentH === currentImageHeight) {
+                    return;
                 }
-            } catch (error) {
-                console.error('Initial upload fetch error:', error);
-                alert('An unexpected error occurred during initial upload.');
-            } finally {
-                loadingOverlay.style.display = 'none';
             }
         }
 
-        // --- Seamless preview swapping (no fade, no flash) ---
-        let previewActiveIsPrimary = true;
-        let previewSeq = 0;
-        let previewAbortController = null;
+        // Abort previous in-flight preview request
+        if (previewAbortController) {
+            try {
+                previewAbortController.abort();
+            } catch (_) {
+            }
+        }
+        previewAbortController = new AbortController();
 
-        function _waitForImgLoad(imgEl) {
-            return new Promise((resolve, reject) => {
-                if (imgEl.complete && imgEl.naturalWidth > 0) return resolve();
-                imgEl.onload = () => resolve();
-                imgEl.onerror = () => reject(new Error('Image failed to load'));
-                // Timeout fallback to prevent infinite waiting
-                setTimeout(() => {
-                    if (imgEl.complete && imgEl.naturalWidth > 0) {
-                        resolve();
-                    } else {
-                        reject(new Error('Image load timeout'));
-                    }
-                }, 10000); // 10 second timeout
+        previewSeq += 1;
+        const seqToken = previewSeq;
+
+        // Add subtle processing indicator
+        previewArea.classList.add('processing');
+
+        const formData = new FormData();
+        formData.append('working_file_path', workingFilePath); // Source: Committed state
+        formData.append('current_preview_path', previewFilePath); // Destination: Transient state
+        formData.append('tool_key', currentToolKey);
+
+        const options = {};
+        const settingInputs = toolSettingsDiv.querySelectorAll('input, select, textarea');
+
+        settingInputs.forEach(input => {
+            let value;
+            if (input.type === 'checkbox') {
+                value = input.checked;
+            } else {
+                value = input.value;
+            }
+            options[input.name] = value;
+        });
+
+        // For subtitle tool, calculate and send text box coordinates relative to image
+        if (currentToolKey === 'subtitle') {
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            // Convert text box position from preview area coordinates to image coordinates
+            const relX = textBoxState.x - imgOffsetX;
+            const relY = textBoxState.y - imgOffsetY;
+
+            // Calculate as percentage of image dimensions for backend
+            const xPercent = relX / imgRect.width;
+            const yPercent = relY / imgRect.height;
+            const widthPercent = textBoxState.width / imgRect.width;
+            const heightPercent = textBoxState.height / imgRect.height;
+
+            // Send as pixel coordinates based on actual image dimensions
+            options.box = [
+                Math.round(xPercent * currentImageWidth),
+                Math.round(yPercent * currentImageHeight),
+                Math.round((xPercent + widthPercent) * currentImageWidth),
+                Math.round((yPercent + heightPercent) * currentImageHeight)
+            ];
+        }
+
+        formData.append('options', JSON.stringify(options));
+
+        try {
+            const response = await fetch('{% url "preview_image" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body: formData,
+                signal: previewAbortController.signal,
             });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const newImageURL = data.temp_image_url + '?v=' + seqToken;
+                await swapPreviewUrl(newImageURL, seqToken);
+
+                previewFilePath = data.preview_file_path;
+                applyButton.disabled = false;
+
+                // Remove processing indicator after successful swap
+                previewArea.classList.remove('processing');
+            } else {
+                console.error('Preview Error:', data.error);
+                previewArea.classList.remove('processing');
+            }
+        } catch (error) {
+            if (error && error.name === 'AbortError') {
+                previewArea.classList.remove('processing');
+                return; // expected during slider drags
+            }
+            console.error('Preview fetch error:', error);
+            previewArea.classList.remove('processing');
         }
+    }
 
-        async function _decodeIfPossible(imgEl) {
-            if (typeof imgEl.decode === 'function') {
-                try {
-                    await imgEl.decode();
-                } catch (err) {
-                    // Image decode failed, but we can still display it
-                    console.warn('Image decode failed:', err);
-                }
-            }
-        }
 
-        async function swapPreviewUrl(url, seqToken) {
-            // If a newer request started, ignore this one
-            if (seqToken !== previewSeq) return;
+    // UPDATED: applyEdit now copies the PREVIEW state to the WORKING state (COMMIT)
+    async function applyEdit() {
+        if (!workingFilePath || !previewFilePath) return;
 
-            const front = previewActiveIsPrimary ? previewImage : previewImageBuffer;
-            const back = previewActiveIsPrimary ? previewImageBuffer : previewImage;
+        loadingOverlay.style.display = 'flex';
 
-            // Ensure both are in the layout; we hide via visibility to avoid flicker
-            front.style.display = 'block';
-            back.style.display = 'block';
-
-            // Load into the hidden one
-            back.style.visibility = 'hidden';
-            back.src = url;
-
-            await _waitForImgLoad(back);
-            await _decodeIfPossible(back);
-
-            // Ignore if stale after await
-            if (seqToken !== previewSeq) return;
-
-            // Atomic swap
-            back.style.visibility = 'visible';
-            front.style.visibility = 'hidden';
-            previewActiveIsPrimary = !previewActiveIsPrimary;
-        }
-
-        // NEW FUNCTION: Handles live preview updates without committing
-        async function handlePreviewUpdate() {
-            if (!workingFilePath || !previewFilePath || !currentToolKey) return;
-
-            // IMPORTANT: Skip preview for subtitle tool - only render on Apply to avoid double text
-            if (currentToolKey === 'subtitle') {
-                applyButton.disabled = false; // Enable apply button when changes are made
-                return;
-            }
-
-            // OPTIMIZATION: Check if the tool is "resize" and values match current dimensions.
-            if (currentToolKey === 'resize') {
-                const widthInput = document.getElementById('width');
-                const heightInput = document.getElementById('height');
-
-                if (widthInput && heightInput) {
-                    const currentW = parseInt(widthInput.value);
-                    const currentH = parseInt(heightInput.value);
-                    if (currentW === currentImageWidth && currentH === currentImageHeight) {
-                        return;
-                    }
-                }
-            }
-
-            // Abort previous in-flight preview request
-            if (previewAbortController) {
-                try { previewAbortController.abort(); } catch (_) {}
-            }
-            previewAbortController = new AbortController();
-
-            previewSeq += 1;
-            const seqToken = previewSeq;
-
-            // Add subtle processing indicator
-            previewArea.classList.add('processing');
-
+        // Special handling for subtitle tool - process directly with coordinates
+        if (currentToolKey === 'subtitle') {
             const formData = new FormData();
-            formData.append('working_file_path', workingFilePath); // Source: Committed state
-            formData.append('current_preview_path', previewFilePath); // Destination: Transient state
+            formData.append('working_file_path', workingFilePath);
+            formData.append('current_preview_path', previewFilePath);
             formData.append('tool_key', currentToolKey);
 
+            // Collect subtitle options
             const options = {};
             const settingInputs = toolSettingsDiv.querySelectorAll('input, select, textarea');
 
@@ -1235,204 +1399,70 @@
                 options[input.name] = value;
             });
 
-            // For subtitle tool, calculate and send text box coordinates relative to image
-            if (currentToolKey === 'subtitle') {
-                const imgRect = previewImage.getBoundingClientRect();
-                const previewRect = previewArea.getBoundingClientRect();
-                const imgOffsetX = imgRect.left - previewRect.left;
-                const imgOffsetY = imgRect.top - previewRect.top;
+            // Calculate and add text box coordinates
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
 
-                // Convert text box position from preview area coordinates to image coordinates
-                const relX = textBoxState.x - imgOffsetX;
-                const relY = textBoxState.y - imgOffsetY;
+            const relX = textBoxState.x - imgOffsetX;
+            const relY = textBoxState.y - imgOffsetY;
 
-                // Calculate as percentage of image dimensions for backend
-                const xPercent = relX / imgRect.width;
-                const yPercent = relY / imgRect.height;
-                const widthPercent = textBoxState.width / imgRect.width;
-                const heightPercent = textBoxState.height / imgRect.height;
+            const xPercent = relX / imgRect.width;
+            const yPercent = relY / imgRect.height;
+            const widthPercent = textBoxState.width / imgRect.width;
+            const heightPercent = textBoxState.height / imgRect.height;
 
-                // Send as pixel coordinates based on actual image dimensions
-                options.box = [
-                    Math.round(xPercent * currentImageWidth),
-                    Math.round(yPercent * currentImageHeight),
-                    Math.round((xPercent + widthPercent) * currentImageWidth),
-                    Math.round((yPercent + heightPercent) * currentImageHeight)
-                ];
-            }
+            options.box = [
+                Math.round(xPercent * currentImageWidth),
+                Math.round(yPercent * currentImageHeight),
+                Math.round((xPercent + widthPercent) * currentImageWidth),
+                Math.round((yPercent + heightPercent) * currentImageHeight)
+            ];
 
             formData.append('options', JSON.stringify(options));
 
             try {
+                // Use preview endpoint to generate the subtitle image
                 const response = await fetch('{% url "preview_image" %}', {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': csrftoken,
                     },
                     body: formData,
-                    signal: previewAbortController.signal,
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    const newImageURL = data.temp_image_url + '?v=' + seqToken;
-                    await swapPreviewUrl(newImageURL, seqToken);
+                    // Now copy preview to working
+                    const copyFormData = new FormData();
+                    copyFormData.append('working_file_path', workingFilePath);
+                    copyFormData.append('preview_file_path', previewFilePath);
 
-                    previewFilePath = data.preview_file_path;
-                    applyButton.disabled = false;
-
-                    // Remove processing indicator after successful swap
-                    previewArea.classList.remove('processing');
-                } else {
-                    console.error('Preview Error:', data.error);
-                    previewArea.classList.remove('processing');
-                }
-            } catch (error) {
-                if (error && error.name === 'AbortError') {
-                    previewArea.classList.remove('processing');
-                    return; // expected during slider drags
-                }
-                console.error('Preview fetch error:', error);
-                previewArea.classList.remove('processing');
-            }
-        }
-
-
-        // UPDATED: applyEdit now copies the PREVIEW state to the WORKING state (COMMIT)
-        async function applyEdit() {
-            if (!workingFilePath || !previewFilePath) return;
-
-            loadingOverlay.style.display = 'flex';
-
-            // Special handling for subtitle tool - process directly with coordinates
-            if (currentToolKey === 'subtitle') {
-                const formData = new FormData();
-                formData.append('working_file_path', workingFilePath);
-                formData.append('current_preview_path', previewFilePath);
-                formData.append('tool_key', currentToolKey);
-
-                // Collect subtitle options
-                const options = {};
-                const settingInputs = toolSettingsDiv.querySelectorAll('input, select, textarea');
-
-                settingInputs.forEach(input => {
-                    let value;
-                    if (input.type === 'checkbox') {
-                        value = input.checked;
-                    } else {
-                        value = input.value;
-                    }
-                    options[input.name] = value;
-                });
-
-                // Calculate and add text box coordinates
-                const imgRect = previewImage.getBoundingClientRect();
-                const previewRect = previewArea.getBoundingClientRect();
-                const imgOffsetX = imgRect.left - previewRect.left;
-                const imgOffsetY = imgRect.top - previewRect.top;
-
-                const relX = textBoxState.x - imgOffsetX;
-                const relY = textBoxState.y - imgOffsetY;
-
-                const xPercent = relX / imgRect.width;
-                const yPercent = relY / imgRect.height;
-                const widthPercent = textBoxState.width / imgRect.width;
-                const heightPercent = textBoxState.height / imgRect.height;
-
-                options.box = [
-                    Math.round(xPercent * currentImageWidth),
-                    Math.round(yPercent * currentImageHeight),
-                    Math.round((xPercent + widthPercent) * currentImageWidth),
-                    Math.round((yPercent + heightPercent) * currentImageHeight)
-                ];
-
-                formData.append('options', JSON.stringify(options));
-
-                try {
-                    // Use preview endpoint to generate the subtitle image
-                    const response = await fetch('{% url "preview_image" %}', {
+                    const copyResponse = await fetch('{% url "process_image" %}', {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': csrftoken,
                         },
-                        body: formData,
+                        body: copyFormData,
                     });
 
-                    const data = await response.json();
+                    const copyData = await copyResponse.json();
 
-                    if (data.success) {
-                        // Now copy preview to working
-                        const copyFormData = new FormData();
-                        copyFormData.append('working_file_path', workingFilePath);
-                        copyFormData.append('preview_file_path', previewFilePath);
+                    if (copyData.success) {
+                        workingFilePath = copyData.working_file_path;
 
-                        const copyResponse = await fetch('{% url "process_image" %}', {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrftoken,
-                            },
-                            body: copyFormData,
-                        });
+                        // Update preview to show the final result
+                        previewSeq += 1;
+                        await swapPreviewUrl(copyData.temp_image_url + '?v=' + previewSeq, previewSeq);
 
-                        const copyData = await copyResponse.json();
-
-                        if (copyData.success) {
-                            workingFilePath = copyData.working_file_path;
-
-                            // Update preview to show the final result
-                            previewSeq += 1;
-                            await swapPreviewUrl(copyData.temp_image_url + '?v=' + previewSeq, previewSeq);
-
-                            alert("Text successfully applied to the image.");
-                            applyButton.disabled = true;
-                        } else {
-                            alert('Error: ' + copyData.error);
-                        }
+                        alert("Text successfully applied to the image.");
+                        // CHANGED: Keep Apply button enabled for subtitle tool to allow reapplying text
+                        // applyButton.disabled = true; // Remove this line for subtitles
                     } else {
-                        alert('Error: ' + data.error);
+                        alert('Error: ' + copyData.error);
                     }
-                } catch (error) {
-                    console.error('Fetch error:', error);
-                    alert('An unexpected error occurred during processing.');
-                } finally {
-                    loadingOverlay.style.display = 'none';
-                }
-                return;
-            }
-
-            // Original logic for other tools
-            const formData = new FormData();
-            formData.append('working_file_path', workingFilePath); // Destination
-            formData.append('preview_file_path', previewFilePath); // Source (What the user currently sees)
-
-            try {
-                const response = await fetch('{% url "process_image" %}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken,
-                    },
-                    body: formData,
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // The working file has been updated to match the preview.
-                    workingFilePath = data.working_file_path;
-
-                    // IMPORTANT: If resize was applied, we must update the stored dimensions
-                    if (currentToolKey === 'resize') {
-                        const widthInput = document.getElementById('width');
-                        const heightInput = document.getElementById('height');
-                        if (widthInput && heightInput) {
-                            currentImageWidth = parseInt(widthInput.value);
-                            currentImageHeight = parseInt(heightInput.value);
-                        }
-                    }
-
-                    alert("Changes successfully applied to the working copy.");
-                    applyButton.disabled = true;
                 } else {
                     alert('Error: ' + data.error);
                 }
@@ -1442,169 +1472,211 @@
             } finally {
                 loadingOverlay.style.display = 'none';
             }
+            return;
         }
 
+        // Original logic for other tools
+        const formData = new FormData();
+        formData.append('working_file_path', workingFilePath);
+        formData.append('preview_file_path', previewFilePath);
 
-        // UPDATED: resetImage handles three file states
-        async function resetImage() {
-             if (!originalFilePath) return;
+        try {
+            const response = await fetch('{% url "process_image" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body: formData,
+            });
 
-             loadingOverlay.style.display = 'flex';
+            const data = await response.json();
 
-             const formData = new FormData();
-             formData.append('original_file_path', originalFilePath);
-             formData.append('working_file_path', workingFilePath);
-             formData.append('preview_file_path', previewFilePath);
+            if (data.success) {
+                workingFilePath = data.working_file_path;
 
-             try {
-                const response = await fetch('{% url "reset_image_state" %}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken,
-                    },
-                    body: formData,
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    workingFilePath = data.working_file_path;
-                    previewFilePath = data.preview_file_path;
-                    currentImageWidth = data.image_width;
-                    currentImageHeight = data.image_height;
-
-                    previewSeq += 1;
-                    await swapPreviewUrl(data.temp_image_url + '?v=' + previewSeq, previewSeq);
-
-                    alert("Image preview state reset to the original upload (new copies created).");
-
-                    if (currentToolKey) {
-                        renderSettings(currentToolKey);
-                    } else {
-                        applyButton.disabled = true;
+                if (currentToolKey === 'resize') {
+                    const widthInput = document.getElementById('width');
+                    const heightInput = document.getElementById('height');
+                    if (widthInput && heightInput) {
+                        currentImageWidth = parseInt(widthInput.value);
+                        currentImageHeight = parseInt(heightInput.value);
                     }
-                } else {
-                    alert('Reset Error: ' + data.error);
                 }
-             } catch (error) {
-                 console.error('Reset fetch error:', error);
-                 alert('An unexpected error occurred during reset.');
-             } finally {
-                loadingOverlay.style.display = 'none';
-             }
+
+                alert("Changes successfully applied to the working copy.");
+                applyButton.disabled = true; // Keep disabled for other tools
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            alert('An unexpected error occurred during processing.');
+        } finally {
+            loadingOverlay.style.display = 'none';
         }
+    }
 
-        // --- EVENT LISTENERS ---
 
-        // 1. Tool Selection
-        toolButtons.forEach(button => {
-            button.addEventListener('click', async () => {
-                if (!workingFilePath) {
-                    alert("Please upload an image first.");
-                    return;
+    // UPDATED: resetImage handles three file states
+    async function resetImage() {
+        if (!originalFilePath) return;
+
+        loadingOverlay.style.display = 'flex';
+
+        const formData = new FormData();
+        formData.append('original_file_path', originalFilePath);
+        formData.append('working_file_path', workingFilePath);
+        formData.append('preview_file_path', previewFilePath);
+
+        try {
+            const response = await fetch('{% url "reset_image_state" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                workingFilePath = data.working_file_path;
+                previewFilePath = data.preview_file_path;
+                currentImageWidth = data.image_width;
+                currentImageHeight = data.image_height;
+
+                previewSeq += 1;
+                await swapPreviewUrl(data.temp_image_url + '?v=' + previewSeq, previewSeq);
+
+                alert("Image preview state reset to the original upload (new copies created).");
+
+                if (currentToolKey) {
+                    renderSettings(currentToolKey);
+                } else {
+                    applyButton.disabled = true;
                 }
+            } else {
+                alert('Reset Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Reset fetch error:', error);
+            alert('An unexpected error occurred during reset.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
 
-                // If there are unsaved preview changes (Apply enabled), discard them by
-                // resetting the transient preview to match the committed working copy.
-                if (!applyButton.disabled) {
-                    try {
-                        const formData = new FormData();
-                        formData.append('working_file_path', workingFilePath);
-                        formData.append('current_preview_path', previewFilePath);
+    // --- EVENT LISTENERS ---
 
-                        const resp = await fetch('{% url "reset_preview" %}', {
-                            method: 'POST',
-                            headers: { 'X-CSRFToken': csrftoken },
-                            body: formData
-                        });
+    // 1. Tool Selection
+    toolButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            if (!workingFilePath) {
+                alert("Please upload an image first.");
+                return;
+            }
 
-                        const data = await resp.json();
-                        if (data.success) {
-                            previewFilePath = data.preview_file_path;
-                            previewSeq += 1;
-                            await swapPreviewUrl(data.temp_image_url + '?v=' + previewSeq, previewSeq);
-                            applyButton.disabled = true; // no unsaved preview changes now
-                        } else {
-                            console.error('Reset preview failed:', data.error);
-                            alert('Could not reset preview: ' + (data.error || 'Unknown error'));
-                            // Fallback: do not change tool selection to avoid losing work
-                            return;
-                        }
-                    } catch (err) {
-                        console.error('Reset preview fetch error:', err);
-                        alert('An unexpected error occurred while resetting preview.');
+            // If there are unsaved preview changes (Apply enabled), discard them by
+            // resetting the transient preview to match the committed working copy.
+            if (!applyButton.disabled) {
+                try {
+                    const formData = new FormData();
+                    formData.append('working_file_path', workingFilePath);
+                    formData.append('current_preview_path', previewFilePath);
+
+                    const resp = await fetch('{% url "reset_preview" %}', {
+                        method: 'POST',
+                        headers: {'X-CSRFToken': csrftoken},
+                        body: formData
+                    });
+
+                    const data = await resp.json();
+                    if (data.success) {
+                        previewFilePath = data.preview_file_path;
+                        previewSeq += 1;
+                        await swapPreviewUrl(data.temp_image_url + '?v=' + previewSeq, previewSeq);
+                        applyButton.disabled = true; // no unsaved preview changes now
+                    } else {
+                        console.error('Reset preview failed:', data.error);
+                        alert('Could not reset preview: ' + (data.error || 'Unknown error'));
+                        // Fallback: do not change tool selection to avoid losing work
                         return;
                     }
+                } catch (err) {
+                    console.error('Reset preview fetch error:', err);
+                    alert('An unexpected error occurred while resetting preview.');
+                    return;
                 }
-
-                toolButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                renderSettings(button.dataset.toolKey);
-            });
-        });
-
-        // 2. Main Action Buttons
-        applyButton.addEventListener('click', applyEdit);
-        resetButton.addEventListener('click', resetImage);
-
-        downloadButton.addEventListener('click', () => {
-            if (workingFilePath) {
-                // Download uses the committed state (workingFilePath)
-                window.location.href = `{% url "download_image" %}?file_path=${workingFilePath}`;
-            } else {
-                alert("No image is currently available for download.");
             }
+
+            toolButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            renderSettings(button.dataset.toolKey);
         });
+    });
 
+    // 2. Main Action Buttons
+    applyButton.addEventListener('click', applyEdit);
+    resetButton.addEventListener('click', resetImage);
 
-        // 3. Image Upload (Handles Clicks and Native Drops)
-        imageUpload.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                currentImageFile = file;
-                handleInitialUpload(file);
-            }
-        });
-
-        // Upload New Picture Button Handler - Simply open file dialog
-        uploadNewBtn.addEventListener('click', () => {
-            imageUpload.click();
-        });
-
-        // 4. Drag-and-Drop Visual Feedback (using correct hex values)
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            previewArea.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults (e) {
-            e.preventDefault();
-            e.stopPropagation();
+    downloadButton.addEventListener('click', () => {
+        if (workingFilePath) {
+            // Download uses the committed state (workingFilePath)
+            window.location.href = `{% url "download_image" %}?file_path=${workingFilePath}`;
+        } else {
+            alert("No image is currently available for download.");
         }
+    });
 
-        ['dragenter', 'dragover'].forEach(eventName => {
-            previewArea.addEventListener(eventName, () => {
-                uploadPrompt.style.borderColor = '#007bff';
-                uploadPrompt.style.color = '#007bff';
-            }, false);
-        });
 
-        ['dragleave', 'drop'].forEach(eventName => {
-            previewArea.addEventListener(eventName, () => {
-                uploadPrompt.style.borderColor = '#6c757d';
-                uploadPrompt.style.color = '#6c757d';
-            }, false);
-        });
+    // 3. Image Upload (Handles Clicks and Native Drops)
+    imageUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            currentImageFile = file;
+            handleInitialUpload(file);
+        }
+    });
 
-        previewArea.addEventListener('drop', (e) => {
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                currentImageFile = file;
-                handleInitialUpload(file);
-            }
+    // Upload New Picture Button Handler - Simply open file dialog
+    uploadNewBtn.addEventListener('click', () => {
+        imageUpload.click();
+    });
+
+    // 4. Drag-and-Drop Visual Feedback (using correct hex values)
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        previewArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        previewArea.addEventListener(eventName, () => {
+            uploadPrompt.style.borderColor = '#007bff';
+            uploadPrompt.style.color = '#007bff';
         }, false);
+    });
 
-    </script>
+    ['dragleave', 'drop'].forEach(eventName => {
+        previewArea.addEventListener(eventName, () => {
+            uploadPrompt.style.borderColor = '#6c757d';
+            uploadPrompt.style.color = '#6c757d';
+        }, false);
+    });
+
+    previewArea.addEventListener('drop', (e) => {
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            currentImageFile = file;
+            handleInitialUpload(file);
+        }
+    }, false);
+
+</script>
 </body>
 </html>
 
