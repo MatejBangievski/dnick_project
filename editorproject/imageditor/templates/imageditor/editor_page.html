@@ -161,6 +161,98 @@
             cursor: se-resize;
         }
 
+        /* Crop Box Overlay */
+        .crop-box-overlay {
+            position: absolute;
+            display: none;
+            border: 2px solid #00ff00;
+            background: transparent;
+            cursor: move;
+            z-index: 3;
+            min-width: 50px;
+            min-height: 50px;
+            box-sizing: border-box;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+
+        .crop-box-overlay.active {
+            display: block;
+        }
+
+        /* Grid lines for rule of thirds */
+        .crop-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .crop-grid-line {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .crop-grid-line.horizontal {
+            width: 100%;
+            height: 1px;
+        }
+
+        .crop-grid-line.vertical {
+            width: 1px;
+            height: 100%;
+        }
+
+        .crop-grid-line:nth-child(1) {
+            top: 33.333%;
+        }
+
+        .crop-grid-line:nth-child(2) {
+            top: 66.666%;
+        }
+
+        .crop-grid-line:nth-child(3) {
+            left: 33.333%;
+        }
+
+        .crop-grid-line:nth-child(4) {
+            left: 66.666%;
+        }
+
+        /* Aspect ratio display */
+        .crop-aspect-display {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .crop-dimensions-display {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 5;
+        }
+
         .upload-prompt {
             position: absolute;
             width: 80%;
@@ -304,6 +396,12 @@
 
         .button-group .preset-btn:hover {
             background-color: #f0f0f5;
+            border-color: var(--primary-color);
+        }
+
+        .button-group .preset-btn.active {
+            background-color: var(--primary-color);
+            color: white;
             border-color: var(--primary-color);
         }
 
@@ -483,6 +581,22 @@
             <div class="resize-handle se" data-direction="se"></div>
         </div>
 
+        <!-- Crop Box Overlay -->
+        <div class="crop-box-overlay" id="crop-box-overlay">
+            <div class="crop-grid">
+                <div class="crop-grid-line horizontal"></div>
+                <div class="crop-grid-line horizontal"></div>
+                <div class="crop-grid-line vertical"></div>
+                <div class="crop-grid-line vertical"></div>
+            </div>
+            <div class="crop-aspect-display" id="crop-aspect-display">16:9</div>
+            <div class="crop-dimensions-display" id="crop-dimensions-display">1920x1080</div>
+            <div class="resize-handle nw" data-direction="nw"></div>
+            <div class="resize-handle ne" data-direction="ne"></div>
+            <div class="resize-handle sw" data-direction="sw"></div>
+            <div class="resize-handle se" data-direction="se"></div>
+        </div>
+
         <!-- Upload New Picture Button -->
         <button class="upload-new-btn" id="upload-new-btn">Upload New Picture</button>
 
@@ -528,6 +642,9 @@
     const textBoxOverlay = document.getElementById('text-box-overlay');
     const textBoxContent = document.getElementById('text-box-content');
     const uploadNewBtn = document.getElementById('upload-new-btn');
+    const cropBoxOverlay = document.getElementById('crop-box-overlay');
+    const cropAspectDisplay = document.getElementById('crop-aspect-display');
+    const cropDimensionsDisplay = document.getElementById('crop-dimensions-display');
 
     let currentImageFile = null;
 
@@ -547,6 +664,16 @@
         y: 0,      // Y position in pixels
         width: 300,  // Width in pixels
         height: 100  // Height in pixels
+    };
+
+    // Crop box state (position and size relative to preview area)
+    let cropBoxState = {
+        x: 0,
+        y: 0,
+        width: 400,
+        height: 300,
+        aspectRatio: null,  // null for free crop, or numeric ratio (e.g., 16/9)
+        lockedAspect: false
     };
 
     // Deep copy of the EDITOR_TOOLS config to safely modify defaults for the current session
@@ -711,6 +838,53 @@
                 });
                 group.appendChild(buttonGroupDiv);
                 return group; // Return the entire group for button-group type
+            case 'aspect-ratio-group': // CASE for Aspect Ratio Preset Buttons
+                group.appendChild(label);
+                const aspectButtonGroupDiv = document.createElement('div');
+                aspectButtonGroupDiv.className = 'button-group';
+
+                option.buttons.forEach(btnConfig => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'preset-btn';
+                    btn.textContent = btnConfig.label;
+                    btn.setAttribute('data-aspect', btnConfig.value);
+
+                    btn.addEventListener('click', () => {
+                        // Remove active class from all buttons
+                        aspectButtonGroupDiv.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+
+                        // Update crop box aspect ratio
+                        if (btnConfig.value === 'free') {
+                            cropBoxState.aspectRatio = null;
+                            cropBoxState.lockedAspect = false;
+                        } else {
+                            const [w, h] = btnConfig.value.split(':').map(Number);
+                            cropBoxState.aspectRatio = w / h;
+                            cropBoxState.lockedAspect = true;
+
+                            // Adjust crop box to match new aspect ratio
+                            const currentRatio = cropBoxState.width / cropBoxState.height;
+                            if (Math.abs(currentRatio - cropBoxState.aspectRatio) > 0.01) {
+                                // Keep width, adjust height
+                                cropBoxState.height = cropBoxState.width / cropBoxState.aspectRatio;
+                            }
+                        }
+
+                        updateCropBoxPosition();
+                        updateCropAspectDisplay();
+                    });
+
+                    // Set first button (Free) as active by default
+                    if (btnConfig.value === 'free') {
+                        btn.classList.add('active');
+                    }
+
+                    aspectButtonGroupDiv.appendChild(btn);
+                });
+                group.appendChild(aspectButtonGroupDiv);
+                return group;
             case 'font-carousel':
                 group.appendChild(label);
                 const hiddenInput = document.createElement('input');
@@ -802,6 +976,19 @@
             textBoxOverlay.classList.remove('active');
         }
 
+        // Show/hide crop box overlay for crop tool
+        if (toolKey === 'crop') {
+            cropBoxOverlay.classList.add('active');
+            // Use requestAnimationFrame to ensure image is rendered before initializing
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    initializeCropBox();
+                });
+            });
+        } else {
+            cropBoxOverlay.classList.remove('active');
+        }
+
         // 1. DYNAMIC DEFAULT UPDATE
         if (toolKey === 'resize' && currentImageWidth > 0 && currentImageHeight > 0) {
             // Set defaults to current dimensions (ensures a neutral state)
@@ -877,11 +1064,11 @@
         const imgOffsetX = imgRect.left - previewRect.left;
         const imgOffsetY = imgRect.top - previewRect.top;
 
-        // Default: bottom-middle position (20% from bottom)
+        // Default: center of image (changed from bottom position)
         const defaultWidth = Math.min(300, imgRect.width * 0.6);
         const defaultHeight = Math.min(100, imgRect.height * 0.15);
         const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
-        const defaultY = imgOffsetY + imgRect.height * 0.75;
+        const defaultY = imgOffsetY + (imgRect.height - defaultHeight) / 2;  // Center vertically
 
         textBoxState = {
             x: defaultX,
@@ -1119,6 +1306,260 @@
         }
     }
 
+    // --- Crop Box Drag and Resize Functionality ---
+
+    function initializeCropBox() {
+        // Get the visible preview image dimensions
+        const imgRect = previewImage.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+
+        // Calculate position relative to preview area
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Default: center 80% of image
+        const defaultWidth = imgRect.width * 0.8;
+        const defaultHeight = imgRect.height * 0.8;
+        const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
+        const defaultY = imgOffsetY + (imgRect.height - defaultHeight) / 2;
+
+        cropBoxState = {
+            x: defaultX,
+            y: defaultY,
+            width: defaultWidth,
+            height: defaultHeight,
+            aspectRatio: null,
+            lockedAspect: false
+        };
+
+        updateCropBoxPosition();
+        updateCropAspectDisplay();
+    }
+
+    function updateCropBoxPosition() {
+        // Get image boundaries
+        const imgRect = previewImage.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Constrain crop box to stay within image boundaries
+        const minX = imgOffsetX;
+        const minY = imgOffsetY;
+        const maxX = imgOffsetX + imgRect.width - cropBoxState.width;
+        const maxY = imgOffsetY + imgRect.height - cropBoxState.height;
+
+        // Apply constraints
+        cropBoxState.x = Math.max(minX, Math.min(maxX, cropBoxState.x));
+        cropBoxState.y = Math.max(minY, Math.min(maxY, cropBoxState.y));
+
+        // Ensure minimum size
+        cropBoxState.width = Math.max(50, Math.min(imgRect.width, cropBoxState.width));
+        cropBoxState.height = Math.max(50, Math.min(imgRect.height, cropBoxState.height));
+
+        // Update DOM
+        cropBoxOverlay.style.left = cropBoxState.x + 'px';
+        cropBoxOverlay.style.top = cropBoxState.y + 'px';
+        cropBoxOverlay.style.width = cropBoxState.width + 'px';
+        cropBoxOverlay.style.height = cropBoxState.height + 'px';
+    }
+
+    function updateCropAspectDisplay() {
+        // Get image boundaries to calculate actual pixel dimensions
+        const imgRect = previewImage.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Convert crop box position to image coordinates
+        const relX = cropBoxState.x - imgOffsetX;
+        const relY = cropBoxState.y - imgOffsetY;
+
+        // Calculate as percentage of image dimensions
+        const xPercent = relX / imgRect.width;
+        const yPercent = relY / imgRect.height;
+        const widthPercent = cropBoxState.width / imgRect.width;
+        const heightPercent = cropBoxState.height / imgRect.height;
+
+        // Calculate actual pixel dimensions
+        const actualWidth = Math.round(widthPercent * currentImageWidth);
+        const actualHeight = Math.round(heightPercent * currentImageHeight);
+
+        // Update dimensions display
+        cropDimensionsDisplay.textContent = `${actualWidth}x${actualHeight}`;
+
+        // Calculate and display aspect ratio
+        const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+        const divisor = gcd(actualWidth, actualHeight);
+        const ratioW = actualWidth / divisor;
+        const ratioH = actualHeight / divisor;
+
+        // Simplify common ratios for display
+        if (Math.abs(ratioW / ratioH - 16 / 9) < 0.01) {
+            cropAspectDisplay.textContent = '16:9';
+        } else if (Math.abs(ratioW / ratioH - 4 / 3) < 0.01) {
+            cropAspectDisplay.textContent = '4:3';
+        } else if (Math.abs(ratioW / ratioH - 1) < 0.01) {
+            cropAspectDisplay.textContent = '1:1';
+        } else if (Math.abs(ratioW / ratioH - 3 / 2) < 0.01) {
+            cropAspectDisplay.textContent = '3:2';
+        } else if (Math.abs(ratioW / ratioH - 2 / 3) < 0.01) {
+            cropAspectDisplay.textContent = '2:3';
+        } else if (Math.abs(ratioW / ratioH - 9 / 16) < 0.01) {
+            cropAspectDisplay.textContent = '9:16';
+        } else if (ratioW < 100 && ratioH < 100) {
+            cropAspectDisplay.textContent = `${ratioW}:${ratioH}`;
+        } else {
+            cropAspectDisplay.textContent = `${(ratioW / ratioH).toFixed(2)}:1`;
+        }
+    }
+
+    // Crop box drag functionality
+    let isCropDragging = false;
+    let cropDragStartX = 0;
+    let cropDragStartY = 0;
+    let cropBoxStartX = 0;
+    let cropBoxStartY = 0;
+
+    cropBoxOverlay.addEventListener('mousedown', (e) => {
+        // Only drag if not clicking on resize handles or grid
+        if (e.target.classList.contains('resize-handle') || e.target.classList.contains('crop-grid-line')) return;
+        if (e.target !== cropBoxOverlay && e.target.parentElement !== cropBoxOverlay) return;
+
+        isCropDragging = true;
+        cropDragStartX = e.clientX;
+        cropDragStartY = e.clientY;
+        cropBoxStartX = cropBoxState.x;
+        cropBoxStartY = cropBoxState.y;
+
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isCropDragging) {
+            const deltaX = e.clientX - cropDragStartX;
+            const deltaY = e.clientY - cropDragStartY;
+
+            cropBoxState.x = cropBoxStartX + deltaX;
+            cropBoxState.y = cropBoxStartY + deltaY;
+
+            updateCropBoxPosition();
+            updateCropAspectDisplay();
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isCropDragging) {
+            isCropDragging = false;
+        }
+        if (isCropResizing) {
+            isCropResizing = false;
+            currentCropResizeHandle = null;
+        }
+    });
+
+    // Crop box resize functionality
+    let isCropResizing = false;
+    let currentCropResizeHandle = null;
+    let cropResizeStartX = 0;
+    let cropResizeStartY = 0;
+    let cropBoxStartWidth = 0;
+    let cropBoxStartHeight = 0;
+
+    // Add event listeners to crop box resize handles
+    function attachCropResizeHandlers() {
+        const cropHandles = cropBoxOverlay.querySelectorAll('.resize-handle');
+        cropHandles.forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                isCropResizing = true;
+                currentCropResizeHandle = handle.dataset.direction;
+                cropResizeStartX = e.clientX;
+                cropResizeStartY = e.clientY;
+                cropBoxStartX = cropBoxState.x;
+                cropBoxStartY = cropBoxState.y;
+                cropBoxStartWidth = cropBoxState.width;
+                cropBoxStartHeight = cropBoxState.height;
+
+                e.stopPropagation();
+                e.preventDefault();
+            });
+        });
+    }
+
+    // Call this after DOM is ready
+    attachCropResizeHandlers();
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isCropResizing) return;
+
+        const deltaX = e.clientX - cropResizeStartX;
+        const deltaY = e.clientY - cropResizeStartY;
+
+        let newWidth = cropBoxStartWidth;
+        let newHeight = cropBoxStartHeight;
+        let newX = cropBoxStartX;
+        let newY = cropBoxStartY;
+
+        switch (currentCropResizeHandle) {
+            case 'se': // Bottom-right
+                newWidth = cropBoxStartWidth + deltaX;
+                newHeight = cropBoxStartHeight + deltaY;
+                break;
+            case 'sw': // Bottom-left
+                newWidth = cropBoxStartWidth - deltaX;
+                newHeight = cropBoxStartHeight + deltaY;
+                newX = cropBoxStartX + deltaX;
+                break;
+            case 'ne': // Top-right
+                newWidth = cropBoxStartWidth + deltaX;
+                newHeight = cropBoxStartHeight - deltaY;
+                newY = cropBoxStartY + deltaY;
+                break;
+            case 'nw': // Top-left
+                newWidth = cropBoxStartWidth - deltaX;
+                newHeight = cropBoxStartHeight - deltaY;
+                newX = cropBoxStartX + deltaX;
+                newY = cropBoxStartY + deltaY;
+                break;
+        }
+
+        // Apply aspect ratio lock if enabled
+        if (cropBoxState.lockedAspect && cropBoxState.aspectRatio) {
+            const currentRatio = newWidth / newHeight;
+
+            // Maintain aspect ratio by adjusting based on which dimension changed more
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // Width changed more, adjust height
+                newHeight = newWidth / cropBoxState.aspectRatio;
+
+                // Adjust Y position for top handles
+                if (currentCropResizeHandle === 'ne' || currentCropResizeHandle === 'nw') {
+                    newY = cropBoxStartY + cropBoxStartHeight - newHeight;
+                }
+            } else {
+                // Height changed more, adjust width
+                newWidth = newHeight * cropBoxState.aspectRatio;
+
+                // Adjust X position for left handles
+                if (currentCropResizeHandle === 'sw' || currentCropResizeHandle === 'nw') {
+                    newX = cropBoxStartX + cropBoxStartWidth - newWidth;
+                }
+            }
+        }
+
+        // Apply minimum size constraints
+        newWidth = Math.max(50, newWidth);
+        newHeight = Math.max(50, newHeight);
+
+        cropBoxState.width = newWidth;
+        cropBoxState.height = newHeight;
+        cropBoxState.x = newX;
+        cropBoxState.y = newY;
+
+        updateCropBoxPosition();
+        updateCropAspectDisplay();
+    });
+
     async function handleInitialUpload(file) {
         loadingOverlay.style.display = 'flex';
 
@@ -1255,8 +1696,8 @@
     async function handlePreviewUpdate() {
         if (!workingFilePath || !previewFilePath || !currentToolKey) return;
 
-        // IMPORTANT: Skip preview for subtitle tool - only render on Apply to avoid double text
-        if (currentToolKey === 'subtitle') {
+        // IMPORTANT: Skip preview for subtitle and crop tools - only render on Apply
+        if (currentToolKey === 'subtitle' || currentToolKey === 'crop') {
             applyButton.disabled = false; // Enable apply button when changes are made
             return;
         }
@@ -1334,6 +1775,35 @@
             ];
         }
 
+        // For crop tool, calculate and send crop box coordinates relative to image
+        if (currentToolKey === 'crop') {
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            // Convert crop box position from preview area coordinates to image coordinates
+            const relX = cropBoxState.x - imgOffsetX;
+            const relY = cropBoxState.y - imgOffsetY;
+
+            // Calculate as percentage of image dimensions
+            const xPercent = relX / imgRect.width;
+            const yPercent = relY / imgRect.height;
+            const widthPercent = cropBoxState.width / imgRect.width;
+            const heightPercent = cropBoxState.height / imgRect.height;
+
+            // Send as pixel coordinates (left, top, right, bottom) based on actual image dimensions
+            const left = Math.max(0, Math.round(xPercent * currentImageWidth));
+            const top = Math.max(0, Math.round(yPercent * currentImageHeight));
+            const right = Math.min(currentImageWidth, Math.round((xPercent + widthPercent) * currentImageWidth));
+            const bottom = Math.min(currentImageHeight, Math.round((yPercent + heightPercent) * currentImageHeight));
+
+            options.left = left;
+            options.top = top;
+            options.right = right;
+            options.bottom = bottom;
+        }
+
         formData.append('options', JSON.stringify(options));
 
         try {
@@ -1354,6 +1824,12 @@
 
                 previewFilePath = data.preview_file_path;
                 applyButton.disabled = false;
+
+                // Update dimensions if crop tool returned new dimensions
+                if (currentToolKey === 'crop' && data.new_width && data.new_height) {
+                    // Note: Don't update currentImageWidth/Height yet - only on Apply
+                    // This is just preview, dimensions change on commit
+                }
 
                 // Remove processing indicator after successful swap
                 previewArea.classList.remove('processing');
@@ -1377,6 +1853,108 @@
         if (!workingFilePath || !previewFilePath) return;
 
         loadingOverlay.style.display = 'flex';
+
+        // Special handling for crop tool - process directly with coordinates
+        if (currentToolKey === 'crop') {
+            const formData = new FormData();
+            formData.append('working_file_path', workingFilePath);
+            formData.append('current_preview_path', previewFilePath);
+            formData.append('tool_key', currentToolKey);
+
+            // Calculate crop coordinates
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            const relX = cropBoxState.x - imgOffsetX;
+            const relY = cropBoxState.y - imgOffsetY;
+
+            const xPercent = relX / imgRect.width;
+            const yPercent = relY / imgRect.height;
+            const widthPercent = cropBoxState.width / imgRect.width;
+            const heightPercent = cropBoxState.height / imgRect.height;
+
+            const options = {
+                left: Math.max(0, Math.round(xPercent * currentImageWidth)),
+                top: Math.max(0, Math.round(yPercent * currentImageHeight)),
+                right: Math.min(currentImageWidth, Math.round((xPercent + widthPercent) * currentImageWidth)),
+                bottom: Math.min(currentImageHeight, Math.round((yPercent + heightPercent) * currentImageHeight))
+            };
+
+            formData.append('options', JSON.stringify(options));
+
+            try {
+                // Use preview endpoint to generate the cropped image
+                const response = await fetch('{% url "preview_image" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    previewFilePath = data.preview_file_path;
+
+                    // Copy preview to working
+                    const copyFormData = new FormData();
+                    copyFormData.append('working_file_path', workingFilePath);
+                    copyFormData.append('preview_file_path', previewFilePath);
+
+                    const copyResponse = await fetch('{% url "process_image" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: copyFormData,
+                    });
+
+                    const copyData = await copyResponse.json();
+
+                    if (copyData.success) {
+                        workingFilePath = copyData.working_file_path;
+
+                        // Update dimensions from backend
+                        if (copyData.new_width && copyData.new_height) {
+                            currentImageWidth = copyData.new_width;
+                            currentImageHeight = copyData.new_height;
+                        }
+
+                        // Update preview to show the final result
+                        previewSeq += 1;
+                        await swapPreviewUrl(copyData.temp_image_url + '?v=' + previewSeq, previewSeq);
+
+                        // Reinitialize crop and text boxes for new image dimensions
+                        previewImage.onload = () => {
+                            initializeCropBox();
+                            initializeTextBox();
+                            previewImage.onload = null;
+                        };
+
+                        // Switch to filter tool after cropping
+                        const filterButton = document.querySelector('[data-tool-key="filter"]');
+                        if (filterButton) {
+                            filterButton.click();
+                        }
+
+                        alert("Crop successfully applied to the image.");
+                    } else {
+                        alert('Error: ' + copyData.error);
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('An unexpected error occurred during crop processing.');
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+            return;
+        }
 
         // Special handling for subtitle tool - process directly with coordinates
         if (currentToolKey === 'subtitle') {
@@ -1494,7 +2072,29 @@
             if (data.success) {
                 workingFilePath = data.working_file_path;
 
-                if (currentToolKey === 'resize') {
+                // Update dimensions from backend response (handles crop and resize)
+                if (data.new_width && data.new_height) {
+                    currentImageWidth = data.new_width;
+                    currentImageHeight = data.new_height;
+
+                    // Reinitialize both boxes to fit new image dimensions
+                    if (currentToolKey === 'crop') {
+                        // Wait for image to load with new dimensions, then reinitialize
+                        previewImage.onload = () => {
+                            initializeCropBox();
+                            initializeTextBox();
+                            previewImage.onload = null; // Remove handler after use
+                        };
+                    } else if (currentToolKey === 'resize') {
+                        // Also reinitialize for resize
+                        previewImage.onload = () => {
+                            initializeTextBox();
+                            initializeCropBox();
+                            previewImage.onload = null;
+                        };
+                    }
+                } else if (currentToolKey === 'resize') {
+                    // Fallback for resize if backend doesn't send dimensions
                     const widthInput = document.getElementById('width');
                     const heightInput = document.getElementById('height');
                     if (widthInput && heightInput) {

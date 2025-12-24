@@ -420,11 +420,21 @@ def preview_image(request):
 
         temp_image_url = settings.MEDIA_URL + saved_path
 
-        return JsonResponse({
+        # Get new dimensions after editing (important for crop tool)
+        new_width, new_height = edited_image.size
+
+        response_data = {
             "success": True,
             "temp_image_url": temp_image_url,
             "preview_file_path": saved_path
-        }, headers={
+        }
+
+        # For crop tool, return new dimensions so frontend can update state
+        if tool_key == 'crop':
+            response_data['new_width'] = new_width
+            response_data['new_height'] = new_height
+
+        return JsonResponse(response_data, headers={
             'Cache-Control': 'no-cache, must-revalidate',  # Allow browser to cache but always revalidate
         })
 
@@ -458,10 +468,15 @@ def process_image(request):
 
         temp_image_url = settings.MEDIA_URL + saved_path
 
+        # Get new dimensions after committing (important for crop/resize tools)
+        new_width, new_height = get_image_dimensions(saved_path)
+
         return JsonResponse({
             "success": True,
             "temp_image_url": temp_image_url,
-            "working_file_path": saved_path
+            "working_file_path": saved_path,
+            "new_width": new_width,
+            "new_height": new_height
         })
 
     except FileNotFoundError:

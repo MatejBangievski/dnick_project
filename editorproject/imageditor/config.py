@@ -50,6 +50,32 @@ EDITOR_TOOLS = {
             },
         ]
     },
+    "crop": {
+        "name": "Crop & Aspect Ratio",
+        "editor_class": CropEditor,
+        "options": [
+            {
+                "id": "aspect_ratio_presets",
+                "label": "Aspect Ratio Presets",
+                "type": "aspect-ratio-group",
+                "buttons": [
+                    {"value": "free", "label": "Free"},
+                    {"value": "1:1", "label": "1:1"},
+                    {"value": "4:3", "label": "4:3"},
+                    {"value": "3:2", "label": "3:2"},
+                    {"value": "16:9", "label": "16:9"},
+                    {"value": "9:16", "label": "9:16"},
+                    {"value": "2:3", "label": "2:3"},
+                ]
+            },
+            {
+                "id": "lock_aspect",
+                "label": "Lock Aspect Ratio",
+                "type": "checkbox",
+                "default": False,
+            },
+        ]
+    },
     "rotate": {
         "name": "Rotate",
         "editor_class": RotateEditor,
