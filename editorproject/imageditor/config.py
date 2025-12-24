@@ -68,12 +68,6 @@ EDITOR_TOOLS = {
                     {"value": "2:3", "label": "2:3"},
                 ]
             },
-            {
-                "id": "lock_aspect",
-                "label": "Lock Aspect Ratio",
-                "type": "checkbox",
-                "default": False,
-            },
         ]
     },
     "rotate": {

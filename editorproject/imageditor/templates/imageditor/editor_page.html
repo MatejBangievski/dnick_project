@@ -787,7 +787,7 @@
                 input.id = option.id;
                 input.name = option.id;
                 input.checked = option.default;
-                input.addEventListener('change', handlePreviewUpdate); // Change event for checkboxes
+                input.addEventListener('change', handlePreviewUpdate);
                 break;
             case 'select':
                 input = document.createElement('select');
@@ -864,12 +864,32 @@
                             cropBoxState.aspectRatio = w / h;
                             cropBoxState.lockedAspect = true;
 
-                            // Adjust crop box to match new aspect ratio
-                            const currentRatio = cropBoxState.width / cropBoxState.height;
-                            if (Math.abs(currentRatio - cropBoxState.aspectRatio) > 0.01) {
-                                // Keep width, adjust height
-                                cropBoxState.height = cropBoxState.width / cropBoxState.aspectRatio;
+                            // Calculate maximum crop box that fits the image with the desired aspect ratio
+                            const imgRect = previewImage.getBoundingClientRect();
+                            const previewRect = previewArea.getBoundingClientRect();
+                            const imgOffsetX = imgRect.left - previewRect.left;
+                            const imgOffsetY = imgRect.top - previewRect.top;
+
+                            const imageAspectRatio = imgRect.width / imgRect.height;
+                            const targetAspectRatio = cropBoxState.aspectRatio;
+
+                            let newWidth, newHeight;
+
+                            if (targetAspectRatio > imageAspectRatio) {
+                                // Crop is wider than image - fit to width
+                                newWidth = imgRect.width;
+                                newHeight = newWidth / targetAspectRatio;
+                            } else {
+                                // Crop is taller than image - fit to height
+                                newHeight = imgRect.height;
+                                newWidth = newHeight * targetAspectRatio;
                             }
+
+                            // Center the crop box
+                            cropBoxState.width = newWidth;
+                            cropBoxState.height = newHeight;
+                            cropBoxState.x = imgOffsetX + (imgRect.width - newWidth) / 2;
+                            cropBoxState.y = imgOffsetY + (imgRect.height - newHeight) / 2;
                         }
 
                         updateCropBoxPosition();
@@ -972,6 +992,12 @@
         // Show/hide text box overlay for subtitle tool
         if (toolKey === 'subtitle') {
             textBoxOverlay.classList.add('active');
+            // Initialize text box every time subtitle tool is selected
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    initializeTextBox();
+                });
+            });
         } else {
             textBoxOverlay.classList.remove('active');
         }
@@ -979,7 +1005,7 @@
         // Show/hide crop box overlay for crop tool
         if (toolKey === 'crop') {
             cropBoxOverlay.classList.add('active');
-            // Use requestAnimationFrame to ensure image is rendered before initializing
+            // Initialize crop box every time crop tool is selected
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     initializeCropBox();
@@ -1525,8 +1551,6 @@
 
         // Apply aspect ratio lock if enabled
         if (cropBoxState.lockedAspect && cropBoxState.aspectRatio) {
-            const currentRatio = newWidth / newHeight;
-
             // Maintain aspect ratio by adjusting based on which dimension changed more
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
                 // Width changed more, adjust height
@@ -1545,11 +1569,52 @@
                     newX = cropBoxStartX + cropBoxStartWidth - newWidth;
                 }
             }
+
+            // Apply LARGER minimum size for locked aspect ratio to prevent too small crops
+            const minSize = 100; // Minimum dimension in pixels
+            if (cropBoxState.aspectRatio > 1) {
+                // Wider than tall - width is the longer dimension
+                newWidth = Math.max(minSize, newWidth);
+                newHeight = newWidth / cropBoxState.aspectRatio;
+            } else {
+                // Taller than wide - height is the longer dimension
+                newHeight = Math.max(minSize, newHeight);
+                newWidth = newHeight * cropBoxState.aspectRatio;
+            }
+        } else {
+            // Apply standard minimum size for free crop
+            newWidth = Math.max(50, newWidth);
+            newHeight = Math.max(50, newHeight);
         }
 
-        // Apply minimum size constraints
-        newWidth = Math.max(50, newWidth);
-        newHeight = Math.max(50, newHeight);
+        // Get image boundaries to constrain crop box
+        const imgRect = previewImage.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Constrain dimensions to not exceed image bounds
+        const maxWidth = imgRect.width;
+        const maxHeight = imgRect.height;
+
+        // If aspect ratio is locked and size exceeds bounds, scale down proportionally
+        if (cropBoxState.lockedAspect && cropBoxState.aspectRatio) {
+            if (newWidth > maxWidth) {
+                newWidth = maxWidth;
+                newHeight = newWidth / cropBoxState.aspectRatio;
+            }
+            if (newHeight > maxHeight) {
+                newHeight = maxHeight;
+                newWidth = newHeight * cropBoxState.aspectRatio;
+            }
+        } else {
+            newWidth = Math.min(newWidth, maxWidth);
+            newHeight = Math.min(newHeight, maxHeight);
+        }
+
+        // Constrain position to keep crop box within image
+        newX = Math.max(imgOffsetX, Math.min(newX, imgOffsetX + imgRect.width - newWidth));
+        newY = Math.max(imgOffsetY, Math.min(newY, imgOffsetY + imgRect.height - newHeight));
 
         cropBoxState.width = newWidth;
         cropBoxState.height = newHeight;
@@ -1928,9 +1993,22 @@
                         await swapPreviewUrl(copyData.temp_image_url + '?v=' + previewSeq, previewSeq);
 
                         // Reinitialize crop and text boxes for new image dimensions
+                        // Use both onload (for when image loads) and immediate with delay (for cached images)
+                        const reinitializeBoxes = () => {
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    initializeCropBox();
+                                    initializeTextBox();
+                                });
+                            });
+                        };
+
+                        // Try immediate (works if image is cached)
+                        reinitializeBoxes();
+
+                        // Also set onload handler (works if image needs to load)
                         previewImage.onload = () => {
-                            initializeCropBox();
-                            initializeTextBox();
+                            reinitializeBoxes();
                             previewImage.onload = null;
                         };
 
@@ -2078,21 +2156,23 @@
                     currentImageHeight = data.new_height;
 
                     // Reinitialize both boxes to fit new image dimensions
-                    if (currentToolKey === 'crop') {
-                        // Wait for image to load with new dimensions, then reinitialize
-                        previewImage.onload = () => {
-                            initializeCropBox();
-                            initializeTextBox();
-                            previewImage.onload = null; // Remove handler after use
-                        };
-                    } else if (currentToolKey === 'resize') {
-                        // Also reinitialize for resize
-                        previewImage.onload = () => {
-                            initializeTextBox();
-                            initializeCropBox();
-                            previewImage.onload = null;
-                        };
-                    }
+                    const reinitializeBoxes = () => {
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                initializeTextBox();
+                                initializeCropBox();
+                            });
+                        });
+                    };
+
+                    // Try immediate (works if image is cached)
+                    reinitializeBoxes();
+
+                    // Also set onload handler (works if image needs to load)
+                    previewImage.onload = () => {
+                        reinitializeBoxes();
+                        previewImage.onload = null;
+                    };
                 } else if (currentToolKey === 'resize') {
                     // Fallback for resize if backend doesn't send dimensions
                     const widthInput = document.getElementById('width');
