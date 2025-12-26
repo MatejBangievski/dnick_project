@@ -1274,7 +1274,7 @@
 
         // Show/hide crop box overlay for crop tool
         if (toolKey === 'crop') {
-            cropBoxOverlay.classList.add('active');
+            // DON'T show crop box yet - let initializeCropBox show it after calculating dimensions
             // Initialize crop box every time crop tool is selected
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
@@ -1645,12 +1645,27 @@
                 const scale = maxWidth / overlayBoxState.overlayOriginalWidth;
                 const scaledWidth = overlayBoxState.overlayOriginalWidth * scale;
                 const scaledHeight = overlayBoxState.overlayOriginalHeight * scale;
+                const defaultX = imgOffsetX + (imgRect.width - scaledWidth) / 2;
+                const defaultY = imgOffsetY + (imgRect.height - scaledHeight) / 2;
 
-                overlayBoxState.width = scaledWidth;
-                overlayBoxState.height = scaledHeight;
-                overlayBoxState.scale = scale;
-                overlayBoxState.x = imgOffsetX + (imgRect.width - scaledWidth) / 2;
-                overlayBoxState.y = imgOffsetY + (imgRect.height - scaledHeight) / 2;
+                // IMPORTANT: Completely replace overlayBoxState like crop tool does
+                // This prevents stale values from causing the 20x20 bug
+                const currentOverlayPath = overlayBoxState.overlayPath;
+                const currentOriginalWidth = overlayBoxState.overlayOriginalWidth;
+                const currentOriginalHeight = overlayBoxState.overlayOriginalHeight;
+                const currentAspectRatio = overlayBoxState.aspectRatio;
+
+                overlayBoxState = {
+                    x: defaultX,
+                    y: defaultY,
+                    width: scaledWidth,
+                    height: scaledHeight,
+                    scale: scale,
+                    overlayPath: currentOverlayPath,
+                    overlayOriginalWidth: currentOriginalWidth,
+                    overlayOriginalHeight: currentOriginalHeight,
+                    aspectRatio: currentAspectRatio
+                };
 
                 updateOverlayBoxPosition();
                 overlayBoxOverlay.classList.add('active');
@@ -1753,31 +1768,49 @@
     // --- Crop Box Drag and Resize Functionality ---
 
     function initializeCropBox() {
-        // Get the visible preview image dimensions
-        const imgRect = previewImage.getBoundingClientRect();
-        const previewRect = previewArea.getBoundingClientRect();
+        // Wait for image to be properly rendered before initializing
+        const initializeWhenReady = () => {
+            // Get the visible preview image dimensions
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
 
-        // Calculate position relative to preview area
-        const imgOffsetX = imgRect.left - previewRect.left;
-        const imgOffsetY = imgRect.top - previewRect.top;
+            // Check if image has proper dimensions (not loading state)
+            if (imgRect.width === 0 || imgRect.height === 0) {
+                // Image not ready yet, wait a bit
+                requestAnimationFrame(initializeWhenReady);
+                return;
+            }
 
-        // Default: center 80% of image
-        const defaultWidth = imgRect.width * 0.8;
-        const defaultHeight = imgRect.height * 0.8;
-        const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
-        const defaultY = imgOffsetY + (imgRect.height - defaultHeight) / 2;
+            // Calculate position relative to preview area
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
 
-        cropBoxState = {
-            x: defaultX,
-            y: defaultY,
-            width: defaultWidth,
-            height: defaultHeight,
-            aspectRatio: null,
-            lockedAspect: false
+            // Default: center 80% of image
+            const defaultWidth = imgRect.width * 0.8;
+            const defaultHeight = imgRect.height * 0.8;
+            const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
+            const defaultY = imgOffsetY + (imgRect.height - defaultHeight) / 2;
+
+            cropBoxState = {
+                x: defaultX,
+                y: defaultY,
+                width: defaultWidth,
+                height: defaultHeight,
+                aspectRatio: null,
+                lockedAspect: false
+            };
+
+            updateCropBoxPosition();
+            updateCropAspectDisplay();
+
+            // NOW show the crop box after initialization is complete
+            cropBoxOverlay.classList.add('active');
         };
 
-        updateCropBoxPosition();
-        updateCropAspectDisplay();
+        // Start initialization with animation frame delay
+        requestAnimationFrame(() => {
+            requestAnimationFrame(initializeWhenReady);
+        });
     }
 
     function updateCropBoxPosition() {

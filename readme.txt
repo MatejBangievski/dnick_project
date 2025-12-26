@@ -1,5 +1,4 @@
 TODO:
-    4. Add the transparency image option.
     5. Add OpenAI Integration for Image editing
     6. Final Optimizations
     7. Beautify the UI, favicon etc.
@@ -10,3 +9,4 @@ Not Found: /media/font_previews/courier.png
 Not Found: /media/font_previews/trebuchet.png
 
 slight offset in the overlay picture.
+bug when first time opening the crop feature
