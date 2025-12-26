@@ -253,6 +253,96 @@
             z-index: 5;
         }
 
+        /* Overlay Box for PNG Overlay Tool */
+        .overlay-box-overlay {
+            position: absolute;
+            display: none;
+            border: 2px solid #9c27b0;
+            background: rgba(156, 39, 176, 0.1);
+            cursor: move;
+            z-index: 3;
+            min-width: 30px;
+            min-height: 30px;
+            box-sizing: border-box;
+        }
+
+        .overlay-box-overlay.active {
+            display: block;
+        }
+
+        .overlay-box-overlay img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+
+        .overlay-dimensions-display {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(156, 39, 176, 0.9);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* File upload styling for overlay tool */
+        .file-upload-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .file-upload-button {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .file-upload-button:hover {
+            background-color: #0056b3;
+        }
+
+        .file-upload-input {
+            display: none;
+        }
+
+        .file-upload-status {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--secondary-color);
+        }
+
+        .file-upload-status.success {
+            color: var(--success-color);
+        }
+
+        .file-upload-status.error {
+            color: #dc3545;
+        }
+
         .upload-prompt {
             position: absolute;
             width: 80%;
@@ -597,6 +687,16 @@
             <div class="resize-handle se" data-direction="se"></div>
         </div>
 
+        <!-- Overlay Box for PNG Overlay Tool -->
+        <div class="overlay-box-overlay" id="overlay-box-overlay">
+            <img id="overlay-preview-img" src="" alt="Overlay Preview">
+            <div class="overlay-dimensions-display" id="overlay-dimensions-display">0x0</div>
+            <div class="resize-handle nw" data-direction="nw"></div>
+            <div class="resize-handle ne" data-direction="ne"></div>
+            <div class="resize-handle sw" data-direction="sw"></div>
+            <div class="resize-handle se" data-direction="se"></div>
+        </div>
+
         <!-- Upload New Picture Button -->
         <button class="upload-new-btn" id="upload-new-btn">Upload New Picture</button>
 
@@ -645,6 +745,9 @@
     const cropBoxOverlay = document.getElementById('crop-box-overlay');
     const cropAspectDisplay = document.getElementById('crop-aspect-display');
     const cropDimensionsDisplay = document.getElementById('crop-dimensions-display');
+    const overlayBoxOverlay = document.getElementById('overlay-box-overlay');
+    const overlayPreviewImg = document.getElementById('overlay-preview-img');
+    const overlayDimensionsDisplay = document.getElementById('overlay-dimensions-display');
 
     let currentImageFile = null;
 
@@ -674,6 +777,19 @@
         height: 300,
         aspectRatio: null,  // null for free crop, or numeric ratio (e.g., 16/9)
         lockedAspect: false
+    };
+
+    // Overlay box state (position and size relative to preview area)
+    let overlayBoxState = {
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 200,
+        scale: 1.0,
+        overlayPath: null,
+        overlayOriginalWidth: 0,
+        overlayOriginalHeight: 0,
+        aspectRatio: 1.0
     };
 
     // Deep copy of the EDITOR_TOOLS config to safely modify defaults for the current session
@@ -744,6 +860,11 @@
 
                 input.addEventListener('input', (e) => {
                     valueDisplay.textContent = e.target.value;
+                    // Update overlay preview opacity in real-time if on overlay tool
+                    if (currentToolKey === 'overlay' && option.id === 'opacity') {
+                        const opacityValue = parseFloat(e.target.value);
+                        overlayPreviewImg.style.opacity = opacityValue;
+                    }
                     debounce(handlePreviewUpdate, 150); // Live preview with debouncing
                 });
                 break;
@@ -964,6 +1085,155 @@
                 carouselContainer.appendChild(carousel);
                 group.appendChild(carouselContainer);
                 return group;
+            case 'file':
+                group.appendChild(label);
+                const fileContainer = document.createElement('div');
+                fileContainer.className = 'file-upload-container';
+
+                const fileLabel = document.createElement('label');
+                fileLabel.className = 'file-upload-button';
+                fileLabel.textContent = 'Choose PNG File';
+
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.id = option.id;
+                fileInput.name = option.id;
+                fileInput.className = 'file-upload-input';
+                if (option.accept) {
+                    fileInput.accept = option.accept;
+                }
+
+                const fileStatus = document.createElement('span');
+                fileStatus.className = 'file-upload-status';
+                fileStatus.textContent = 'No file selected';
+
+                fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Validate PNG
+                        if (!file.name.toLowerCase().endsWith('.png')) {
+                            fileStatus.textContent = 'Error: Only PNG files are supported';
+                            fileStatus.className = 'file-upload-status error';
+                            return;
+                        }
+
+                        fileStatus.textContent = 'Uploading...';
+                        fileStatus.className = 'file-upload-status';
+
+                        // Upload to server
+                        const formData = new FormData();
+                        formData.append('overlay_file', file);
+
+                        fetch('/api/upload/overlay/', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-CSRFToken': csrftoken
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                fileStatus.textContent = `Loaded: ${file.name} (${data.width}x${data.height})`;
+                                fileStatus.className = 'file-upload-status success';
+
+                                // Store overlay info in state
+                                overlayBoxState.overlayPath = data.overlay_path;
+                                overlayBoxState.overlayOriginalWidth = data.width;
+                                overlayBoxState.overlayOriginalHeight = data.height;
+                                overlayBoxState.aspectRatio = data.width / data.height;
+
+                                // Update hidden input
+                                const overlayPathInput = toolSettingsDiv.querySelector('#overlay_path');
+                                if (overlayPathInput) {
+                                    overlayPathInput.value = data.overlay_path;
+                                }
+
+                                // Initialize overlay box
+                                if (currentToolKey === 'overlay') {
+                                    initializeOverlayBox(data.overlay_url);
+                                }
+                            } else {
+                                fileStatus.textContent = `Error: ${data.error}`;
+                                fileStatus.className = 'file-upload-status error';
+                            }
+                        })
+                        .catch(error => {
+                            fileStatus.textContent = `Error: ${error.message}`;
+                            fileStatus.className = 'file-upload-status error';
+                        });
+                    }
+                });
+
+                fileLabel.appendChild(fileInput);
+                fileContainer.appendChild(fileLabel);
+                fileContainer.appendChild(fileStatus);
+                group.appendChild(fileContainer);
+                return group;
+            case 'opacity-button-group':
+                group.appendChild(label);
+                const opacityButtonGroupDiv = document.createElement('div');
+                opacityButtonGroupDiv.className = 'button-group';
+
+                option.buttons.forEach(btnConfig => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'preset-btn';
+                    btn.textContent = btnConfig.label;
+                    btn.setAttribute('data-opacity', btnConfig.value);
+
+                    btn.addEventListener('click', () => {
+                        const opacityInput = toolSettingsDiv.querySelector('#opacity');
+                        const valueDisplay = opacityInput ? opacityInput.closest('.setting-group').querySelector('.input-range-value') : null;
+                        const opacityValue = parseFloat(btn.getAttribute('data-opacity'));
+
+                        if (opacityInput) {
+                            opacityInput.value = opacityValue;
+                            if (valueDisplay) {
+                                valueDisplay.textContent = opacityValue.toFixed(2);
+                            }
+                            // Update overlay preview opacity visually
+                            overlayPreviewImg.style.opacity = opacityValue;
+                            // Enable apply button for overlay tool
+                            if (currentToolKey === 'overlay' && overlayBoxState.overlayPath) {
+                                applyButton.disabled = false;
+                            }
+                            handlePreviewUpdate();
+                        }
+                    });
+                    opacityButtonGroupDiv.appendChild(btn);
+                });
+                group.appendChild(opacityButtonGroupDiv);
+                return group;
+            case 'position-button-group':
+                group.appendChild(label);
+                const positionButtonGroupDiv = document.createElement('div');
+                positionButtonGroupDiv.className = 'button-group';
+
+                option.buttons.forEach(btnConfig => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'preset-btn';
+                    btn.textContent = btnConfig.label;
+                    btn.setAttribute('data-position', btnConfig.value);
+
+                    btn.addEventListener('click', () => {
+                        if (currentToolKey === 'overlay' && overlayBoxState.overlayPath) {
+                            positionOverlayBox(btnConfig.value);
+                        }
+                    });
+                    positionButtonGroupDiv.appendChild(btn);
+                });
+                group.appendChild(positionButtonGroupDiv);
+                return group;
+            case 'hidden':
+                input = document.createElement('input');
+                input.type = 'hidden';
+                input.id = option.id;
+                input.name = option.id;
+                input.value = option.default || '';
+                group.appendChild(input);
+                return group;
             default:
                 return null;
         }
@@ -1013,6 +1283,14 @@
             });
         } else {
             cropBoxOverlay.classList.remove('active');
+        }
+
+        // Show/hide overlay box for overlay tool
+        if (toolKey === 'overlay') {
+            // Don't show overlay box until user uploads a file
+            // It will be shown in initializeOverlayBox()
+        } else {
+            overlayBoxOverlay.classList.remove('active');
         }
 
         // 1. DYNAMIC DEFAULT UPDATE
@@ -1332,6 +1610,146 @@
         }
     }
 
+    // --- Overlay Box Initialization and Positioning ---
+
+    function initializeOverlayBox(overlayUrl) {
+        if (!overlayUrl) return;
+
+        // Wait for overlay image to load first
+        overlayPreviewImg.onload = () => {
+            // Now wait for both images to be properly rendered
+            const initializeWhenReady = () => {
+                // Get the visible preview image dimensions
+                const imgRect = previewImage.getBoundingClientRect();
+                const previewRect = previewArea.getBoundingClientRect();
+
+                // Check if image has proper dimensions (not loading state)
+                if (imgRect.width === 0 || imgRect.height === 0) {
+                    // Image not ready yet, wait a bit
+                    requestAnimationFrame(initializeWhenReady);
+                    return;
+                }
+
+                // Verify we have valid overlay dimensions
+                if (!overlayBoxState.overlayOriginalWidth || !overlayBoxState.overlayOriginalHeight) {
+                    console.error('Overlay dimensions not set');
+                    return;
+                }
+
+                // Calculate position relative to preview area
+                const imgOffsetX = imgRect.left - previewRect.left;
+                const imgOffsetY = imgRect.top - previewRect.top;
+
+                // Default: scale overlay to 30% of image width, center it
+                const maxWidth = imgRect.width * 0.3;
+                const scale = maxWidth / overlayBoxState.overlayOriginalWidth;
+                const scaledWidth = overlayBoxState.overlayOriginalWidth * scale;
+                const scaledHeight = overlayBoxState.overlayOriginalHeight * scale;
+
+                overlayBoxState.width = scaledWidth;
+                overlayBoxState.height = scaledHeight;
+                overlayBoxState.scale = scale;
+                overlayBoxState.x = imgOffsetX + (imgRect.width - scaledWidth) / 2;
+                overlayBoxState.y = imgOffsetY + (imgRect.height - scaledHeight) / 2;
+
+                updateOverlayBoxPosition();
+                overlayBoxOverlay.classList.add('active');
+
+                // Reset opacity visual to match default (1.0)
+                overlayPreviewImg.style.opacity = '1.0';
+            };
+
+            // Start initialization with animation frame after image loads
+            requestAnimationFrame(() => {
+                requestAnimationFrame(initializeWhenReady);
+            });
+        };
+
+        // Set overlay image source - this triggers onload
+        overlayPreviewImg.src = overlayUrl;
+    }
+
+    function positionOverlayBox(position) {
+        if (!overlayBoxState.overlayPath) return;
+
+        const imgRect = previewImage.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        const margin = 20;
+
+        switch(position) {
+            case 'center':
+                overlayBoxState.x = imgOffsetX + (imgRect.width - overlayBoxState.width) / 2;
+                overlayBoxState.y = imgOffsetY + (imgRect.height - overlayBoxState.height) / 2;
+                break;
+            case 'top-left':
+                overlayBoxState.x = imgOffsetX + margin;
+                overlayBoxState.y = imgOffsetY + margin;
+                break;
+            case 'top-right':
+                overlayBoxState.x = imgOffsetX + imgRect.width - overlayBoxState.width - margin;
+                overlayBoxState.y = imgOffsetY + margin;
+                break;
+            case 'bottom-left':
+                overlayBoxState.x = imgOffsetX + margin;
+                overlayBoxState.y = imgOffsetY + imgRect.height - overlayBoxState.height - margin;
+                break;
+            case 'bottom-right':
+                overlayBoxState.x = imgOffsetX + imgRect.width - overlayBoxState.width - margin;
+                overlayBoxState.y = imgOffsetY + imgRect.height - overlayBoxState.height - margin;
+                break;
+        }
+
+        updateOverlayBoxPosition();
+    }
+
+    function updateOverlayBoxPosition() {
+        // Get image boundaries
+        const imgRect = previewImage.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Calculate minimum size as 10% of original overlay dimensions
+        const minScale = 0.1;
+        const minWidth = overlayBoxState.overlayOriginalWidth * minScale;
+        const minHeight = overlayBoxState.overlayOriginalHeight * minScale;
+
+        // Ensure minimum and maximum size first (minimum is 10% of original, max is image size)
+        overlayBoxState.width = Math.max(minWidth, Math.min(imgRect.width, overlayBoxState.width));
+        overlayBoxState.height = Math.max(minHeight, Math.min(imgRect.height, overlayBoxState.height));
+
+        // Recalculate scale based on constrained width
+        overlayBoxState.scale = overlayBoxState.width / overlayBoxState.overlayOriginalWidth;
+
+        // Then constrain overlay box to stay within image boundaries
+        const minX = imgOffsetX;
+        const minY = imgOffsetY;
+        const maxX = imgOffsetX + imgRect.width - overlayBoxState.width;
+        const maxY = imgOffsetY + imgRect.height - overlayBoxState.height;
+
+        // Apply constraints (clamp to valid range, prevent negative values)
+        overlayBoxState.x = Math.max(minX, Math.min(maxX, overlayBoxState.x));
+        overlayBoxState.y = Math.max(minY, Math.min(maxY, overlayBoxState.y));
+
+        // Update DOM
+        overlayBoxOverlay.style.left = overlayBoxState.x + 'px';
+        overlayBoxOverlay.style.top = overlayBoxState.y + 'px';
+        overlayBoxOverlay.style.width = overlayBoxState.width + 'px';
+        overlayBoxOverlay.style.height = overlayBoxState.height + 'px';
+
+        // Update dimensions display
+        updateOverlayDimensionsDisplay();
+    }
+
+    function updateOverlayDimensionsDisplay() {
+        const actualWidth = Math.round(overlayBoxState.overlayOriginalWidth * overlayBoxState.scale);
+        const actualHeight = Math.round(overlayBoxState.overlayOriginalHeight * overlayBoxState.scale);
+        overlayDimensionsDisplay.textContent = `${actualWidth}x${actualHeight}`;
+    }
+
     // --- Crop Box Drag and Resize Functionality ---
 
     function initializeCropBox() {
@@ -1625,6 +2043,161 @@
         updateCropAspectDisplay();
     });
 
+    // --- Overlay Box Drag and Resize Functionality ---
+
+    // Overlay box drag functionality
+    let isOverlayDragging = false;
+    let overlayDragStartX = 0;
+    let overlayDragStartY = 0;
+    let overlayBoxStartX = 0;
+    let overlayBoxStartY = 0;
+
+    overlayBoxOverlay.addEventListener('mousedown', (e) => {
+        // Only drag if not clicking on resize handles
+        if (e.target.classList.contains('resize-handle')) return;
+
+        // Allow dragging when clicking anywhere on the overlay box
+        isOverlayDragging = true;
+        overlayDragStartX = e.clientX;
+        overlayDragStartY = e.clientY;
+        overlayBoxStartX = overlayBoxState.x;
+        overlayBoxStartY = overlayBoxState.y;
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isOverlayDragging) {
+            const deltaX = e.clientX - overlayDragStartX;
+            const deltaY = e.clientY - overlayDragStartY;
+
+            overlayBoxState.x = overlayBoxStartX + deltaX;
+            overlayBoxState.y = overlayBoxStartY + deltaY;
+
+            updateOverlayBoxPosition();
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isOverlayDragging) {
+            isOverlayDragging = false;
+        }
+        if (isOverlayResizing) {
+            isOverlayResizing = false;
+            currentOverlayResizeHandle = null;
+        }
+    });
+
+    // Overlay box resize functionality (maintains aspect ratio)
+    let isOverlayResizing = false;
+    let currentOverlayResizeHandle = null;
+    let overlayResizeStartX = 0;
+    let overlayResizeStartY = 0;
+
+    function attachOverlayResizeHandlers() {
+        const overlayHandles = overlayBoxOverlay.querySelectorAll('.resize-handle');
+        overlayHandles.forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                isOverlayResizing = true;
+                currentOverlayResizeHandle = handle.dataset.direction;
+                overlayResizeStartX = e.clientX;
+                overlayResizeStartY = e.clientY;
+                overlayBoxStartX = overlayBoxState.x;
+                overlayBoxStartY = overlayBoxState.y;
+                cropBoxStartWidth = overlayBoxState.width;
+                cropBoxStartHeight = overlayBoxState.height;
+
+                e.stopPropagation();
+                e.preventDefault();
+            });
+        });
+    }
+
+    // Call this after DOM is ready
+    attachOverlayResizeHandlers();
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isOverlayResizing) return;
+
+        const deltaX = e.clientX - overlayResizeStartX;
+        const deltaY = e.clientY - overlayResizeStartY;
+
+        let newWidth = cropBoxStartWidth;
+        let newHeight = cropBoxStartHeight;
+        let newX = overlayBoxStartX;
+        let newY = overlayBoxStartY;
+
+        // Always maintain aspect ratio for overlay
+        const aspectRatio = overlayBoxState.aspectRatio;
+
+        switch (currentOverlayResizeHandle) {
+            case 'se': // Bottom-right
+                newWidth = cropBoxStartWidth + deltaX;
+                newHeight = newWidth / aspectRatio;
+                break;
+            case 'sw': // Bottom-left
+                newWidth = cropBoxStartWidth - deltaX;
+                newHeight = newWidth / aspectRatio;
+                newX = overlayBoxStartX + deltaX;
+                break;
+            case 'ne': // Top-right
+                newWidth = cropBoxStartWidth + deltaX;
+                newHeight = newWidth / aspectRatio;
+                newY = overlayBoxStartY - (newHeight - cropBoxStartHeight);
+                break;
+            case 'nw': // Top-left
+                newWidth = cropBoxStartWidth - deltaX;
+                newHeight = newWidth / aspectRatio;
+                newX = overlayBoxStartX + deltaX;
+                newY = overlayBoxStartY - (newHeight - cropBoxStartHeight);
+                break;
+        }
+
+        // Enforce minimum size (10% of original overlay dimensions)
+        const minScale = 0.1;
+        const minSize = overlayBoxState.overlayOriginalWidth * minScale;
+        if (newWidth < minSize) {
+            newWidth = minSize;
+            newHeight = newWidth / aspectRatio;
+        }
+
+        // Get image boundaries to constrain resizing
+        const imgRect = previewImage.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Constrain to image bounds
+        if (newX < imgOffsetX) {
+            newX = imgOffsetX;
+            newWidth = overlayBoxStartX + cropBoxStartWidth - imgOffsetX;
+            newHeight = newWidth / aspectRatio;
+        }
+        if (newY < imgOffsetY) {
+            newY = imgOffsetY;
+            newHeight = overlayBoxStartY + cropBoxStartHeight - imgOffsetY;
+            newWidth = newHeight * aspectRatio;
+        }
+        if (newX + newWidth > imgOffsetX + imgRect.width) {
+            newWidth = imgOffsetX + imgRect.width - newX;
+            newHeight = newWidth / aspectRatio;
+        }
+        if (newY + newHeight > imgOffsetY + imgRect.height) {
+            newHeight = imgOffsetY + imgRect.height - newY;
+            newWidth = newHeight * aspectRatio;
+        }
+
+        overlayBoxState.width = newWidth;
+        overlayBoxState.height = newHeight;
+        overlayBoxState.x = newX;
+        overlayBoxState.y = newY;
+
+        // Calculate new scale
+        overlayBoxState.scale = newWidth / overlayBoxState.overlayOriginalWidth;
+
+        updateOverlayBoxPosition();
+    });
+
     async function handleInitialUpload(file) {
         loadingOverlay.style.display = 'flex';
 
@@ -1761,8 +2334,8 @@
     async function handlePreviewUpdate() {
         if (!workingFilePath || !previewFilePath || !currentToolKey) return;
 
-        // IMPORTANT: Skip preview for subtitle and crop tools - only render on Apply
-        if (currentToolKey === 'subtitle' || currentToolKey === 'crop') {
+        // IMPORTANT: Skip preview for subtitle, crop, and overlay tools - only render on Apply
+        if (currentToolKey === 'subtitle' || currentToolKey === 'crop' || currentToolKey === 'overlay') {
             applyButton.disabled = false; // Enable apply button when changes are made
             return;
         }
@@ -1867,6 +2440,29 @@
             options.top = top;
             options.right = right;
             options.bottom = bottom;
+        }
+
+        // For overlay tool, calculate and send overlay box coordinates relative to image
+        if (currentToolKey === 'overlay') {
+            if (overlayBoxState.overlayPath) {
+                const imgRect = previewImage.getBoundingClientRect();
+                const previewRect = previewArea.getBoundingClientRect();
+                const imgOffsetX = imgRect.left - previewRect.left;
+                const imgOffsetY = imgRect.top - previewRect.top;
+
+                // Convert overlay box position from preview area coordinates to image coordinates
+                const relX = overlayBoxState.x - imgOffsetX;
+                const relY = overlayBoxState.y - imgOffsetY;
+
+                // Calculate as percentage of image dimensions
+                const xPercent = relX / imgRect.width;
+                const yPercent = relY / imgRect.height;
+
+                // Send as pixel coordinates based on actual image dimensions
+                options.x = Math.max(0, Math.round(xPercent * currentImageWidth));
+                options.y = Math.max(0, Math.round(yPercent * currentImageHeight));
+                options.scale = overlayBoxState.scale;
+            }
         }
 
         formData.append('options', JSON.stringify(options));
@@ -2125,6 +2721,109 @@
             } catch (error) {
                 console.error('Fetch error:', error);
                 alert('An unexpected error occurred during processing.');
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+            return;
+        }
+
+        // Special handling for overlay tool - process directly with coordinates
+        if (currentToolKey === 'overlay') {
+            if (!overlayBoxState.overlayPath) {
+                alert('Please upload a PNG overlay image first.');
+                loadingOverlay.style.display = 'none';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('working_file_path', workingFilePath);
+            formData.append('current_preview_path', previewFilePath);
+            formData.append('tool_key', currentToolKey);
+
+            // Collect overlay options
+            const options = {};
+            const settingInputs = toolSettingsDiv.querySelectorAll('input, select, textarea');
+
+            settingInputs.forEach(input => {
+                let value;
+                if (input.type === 'checkbox') {
+                    value = input.checked;
+                } else {
+                    value = input.value;
+                }
+                options[input.name] = value;
+            });
+
+            // Calculate and add overlay box coordinates
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            const relX = overlayBoxState.x - imgOffsetX;
+            const relY = overlayBoxState.y - imgOffsetY;
+
+            const xPercent = relX / imgRect.width;
+            const yPercent = relY / imgRect.height;
+
+            options.x = Math.max(0, Math.round(xPercent * currentImageWidth));
+            options.y = Math.max(0, Math.round(yPercent * currentImageHeight));
+            options.scale = overlayBoxState.scale;
+
+            formData.append('options', JSON.stringify(options));
+
+            try {
+                // Use preview endpoint to generate the overlay image
+                const response = await fetch('{% url "preview_image" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Now copy preview to working
+                    const copyFormData = new FormData();
+                    copyFormData.append('working_file_path', workingFilePath);
+                    copyFormData.append('preview_file_path', previewFilePath);
+
+                    const copyResponse = await fetch('{% url "process_image" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: copyFormData,
+                    });
+
+                    const copyData = await copyResponse.json();
+
+                    if (copyData.success) {
+                        workingFilePath = copyData.working_file_path;
+
+                        // Update preview to show the final result
+                        previewSeq += 1;
+                        await swapPreviewUrl(copyData.temp_image_url + '?v=' + previewSeq, previewSeq);
+
+                        // Hide overlay box after applying
+                        overlayBoxOverlay.classList.remove('active');
+
+                        // Reset overlay state for next use
+                        overlayBoxState.overlayPath = null;
+
+                        alert("Overlay successfully applied to the image.");
+                        applyButton.disabled = true;
+                    } else {
+                        alert('Error: ' + copyData.error);
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('An unexpected error occurred during overlay processing.');
             } finally {
                 loadingOverlay.style.display = 'none';
             }

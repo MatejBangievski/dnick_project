@@ -476,3 +476,88 @@ class WatermarkEditor(ImageEditor):
         else:
             raise ValueError(f"Unknown preset position '{name}'. Use tuple (x, y) for custom position.")
 
+
+class OverlayEditor(ImageEditor):
+    """
+    Add a PNG overlay/logo to an image with custom positioning, scaling, and opacity.
+    Supports drag-and-drop positioning with aspect-ratio locked scaling.
+    """
+
+    def edit(self, image: Image.Image, **options) -> Image.Image:
+        overlay_path = options.get("overlay_path")
+        if not overlay_path:
+            raise ValueError("OverlayEditor requires 'overlay_path' in options.")
+
+        # Validate PNG format
+        if not overlay_path.lower().endswith(".png"):
+            raise ValueError("Overlay must be a PNG file with transparency.")
+
+        # Load overlay image - resolve to full path if needed
+        try:
+            # Check if it's a relative path, convert to absolute
+            from django.core.files.storage import default_storage
+            if default_storage.exists(overlay_path):
+                overlay_path = default_storage.path(overlay_path)
+            overlay = Image.open(overlay_path)
+        except Exception as e:
+            raise ValueError(f"Failed to load overlay image: {str(e)}")
+
+        # Convert both images to RGBA for alpha compositing
+        image = image.convert("RGBA")
+        overlay = overlay.convert("RGBA")
+
+        # Apply opacity (0.0 to 1.0)
+        opacity = float(options.get("opacity", 1.0))
+        overlay = self._apply_opacity(overlay, opacity)
+
+        # Apply scaling (maintains aspect ratio)
+        scale = float(options.get("scale", 1.0))
+        if scale != 1.0:
+            overlay = self._scale_overlay(overlay, scale)
+
+        # Get position (image-relative pixel coordinates)
+        x = int(options.get("x", 0))
+        y = int(options.get("y", 0))
+
+        # Ensure overlay stays within image bounds
+        x = max(0, min(x, image.width - overlay.width))
+        y = max(0, min(y, image.height - overlay.height))
+
+        # Composite overlay onto image
+        result = image.copy()
+        result.alpha_composite(overlay, (x, y))
+
+        return result
+
+    def _apply_opacity(self, overlay: Image.Image, opacity: float):
+        """Apply opacity to overlay by modifying its alpha channel."""
+        if opacity >= 1.0:
+            return overlay
+        if opacity <= 0.0:
+            # Return fully transparent overlay
+            opacity = 0.0
+
+        # Extract alpha channel and adjust brightness
+        alpha = overlay.split()[3]
+        alpha = ImageEnhance.Brightness(alpha).enhance(opacity)
+        overlay.putalpha(alpha)
+        return overlay
+
+    def _scale_overlay(self, overlay: Image.Image, scale: float):
+        """Scale overlay maintaining aspect ratio."""
+        if scale <= 0:
+            scale = 0.1  # Minimum scale
+
+        w, h = overlay.size
+        new_w = max(1, int(w * scale))
+        new_h = max(1, int(h * scale))
+
+        # Handle both old and new Pillow API versions
+        try:
+            LANCZOS = Image.Resampling.LANCZOS
+        except AttributeError:
+            LANCZOS = Image.LANCZOS
+
+        return overlay.resize((new_w, new_h), LANCZOS)
+
+

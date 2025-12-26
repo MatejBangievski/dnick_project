@@ -1,5 +1,5 @@
 # imageditor/config.py
-from .editors.editors import CropEditor, FilterEditor, ResizeEditor, RotateEditor, SubtitleEditor, WatermarkEditor
+from .editors.editors import CropEditor, FilterEditor, ResizeEditor, RotateEditor, SubtitleEditor, WatermarkEditor, OverlayEditor
 
 # Define all tools and their configuration for the UI and backend logic
 # This structure makes the app scalable for future tools.
@@ -174,6 +174,75 @@ EDITOR_TOOLS = {
                 "label": "Background Box",
                 "type": "checkbox",
                 "default": False,
+            },
+        ]
+    },
+    "overlay": {
+        "name": "Add PNG Overlay/Logo",
+        "editor_class": OverlayEditor,
+        "options": [
+            {
+                "id": "overlay_file",
+                "label": "Upload PNG Image",
+                "type": "file",
+                "accept": ".png",
+                "default": None,
+            },
+            {
+                "id": "opacity",
+                "label": "Transparency/Opacity",
+                "type": "slider",
+                "min": 0.0,
+                "max": 1.0,
+                "step": 0.01,
+                "default": 1.0,
+            },
+            {
+                "id": "opacity_presets",
+                "label": "Quick Opacity Presets",
+                "type": "opacity-button-group",
+                "buttons": [
+                    {"value": 0.25, "label": "25%"},
+                    {"value": 0.5, "label": "50%"},
+                    {"value": 0.75, "label": "75%"},
+                    {"value": 1.0, "label": "100%"},
+                ]
+            },
+            {
+                "id": "position_presets",
+                "label": "Position Presets",
+                "type": "position-button-group",
+                "buttons": [
+                    {"value": "center", "label": "Center"},
+                    {"value": "top-left", "label": "Top Left"},
+                    {"value": "top-right", "label": "Top Right"},
+                    {"value": "bottom-left", "label": "Bottom Left"},
+                    {"value": "bottom-right", "label": "Bottom Right"},
+                ]
+            },
+            {
+                "id": "x",
+                "label": "X Position",
+                "type": "hidden",
+                "default": 0,
+            },
+            {
+                "id": "y",
+                "label": "Y Position",
+                "type": "hidden",
+                "default": 0,
+            },
+            {
+                "id": "scale",
+                "label": "Scale",
+                "type": "hidden",
+                "default": 1.0,
+            },
+            {
+                "id": "overlay_path",
+                "label": "Overlay Path",
+                "type": "hidden",
+                "default": "",
             },
         ]
     },

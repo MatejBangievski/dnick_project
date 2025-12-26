@@ -8,3 +8,5 @@ TODO:
 bugs:
 Not Found: /media/font_previews/courier.png
 Not Found: /media/font_previews/trebuchet.png
+
+slight offset in the overlay picture.

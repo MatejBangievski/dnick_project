@@ -27,6 +27,7 @@ EDITOR_TOOLS = deepcopy(BASE_EDITOR_TOOLS)
 
 # --- Configuration ---
 TEMP_IMAGE_DIR = 'temp_edited_images'
+TEMP_OVERLAY_DIR = 'temp_overlays'
 
 
 # ... (Cleanup Logic, atexit.register, setup_temp_dir, generate_temp_file_path, parse_options remain unchanged)
@@ -36,6 +37,7 @@ def cleanup_temp_images():
     # ... (unchanged)
     if hasattr(settings, 'MEDIA_ROOT') and settings.MEDIA_ROOT:
         temp_path = os.path.join(settings.MEDIA_ROOT, TEMP_IMAGE_DIR)
+        overlay_path = os.path.join(settings.MEDIA_ROOT, TEMP_OVERLAY_DIR)
 
         # 1. DELETE: Delete the entire directory if it exists
         if os.path.exists(temp_path):
@@ -46,10 +48,20 @@ def cleanup_temp_images():
             except Exception as e:
                 print(f"[Cleanup] ❌ Error during deletion: {e}")
 
+        # Delete overlay directory
+        if os.path.exists(overlay_path):
+            try:
+                print(f"[Cleanup] 🗑️ Deleting temporary overlays directory: {overlay_path}")
+                shutil.rmtree(overlay_path)
+                print("[Cleanup] ✅ Temporary overlays deleted.")
+            except Exception as e:
+                print(f"[Cleanup] ❌ Error during overlay deletion: {e}")
+
         # 2. RECREATE: Ensure the directory exists after cleanup (critical for reloads)
         try:
             os.makedirs(temp_path, exist_ok=True)
-            print("[Cleanup] 📁 Recreated temporary directory for future use.")
+            os.makedirs(overlay_path, exist_ok=True)
+            print("[Cleanup] 📁 Recreated temporary directories for future use.")
         except Exception as e:
             print(f"[Cleanup] ❌ Error recreating directory: {e}")
 
@@ -65,8 +77,11 @@ def setup_temp_dir():
         return
 
     temp_path = os.path.join(settings.MEDIA_ROOT, TEMP_IMAGE_DIR)
+    overlay_path = os.path.join(settings.MEDIA_ROOT, TEMP_OVERLAY_DIR)
     if not os.path.exists(temp_path):
         os.makedirs(temp_path)
+    if not os.path.exists(overlay_path):
+        os.makedirs(overlay_path)
 
 
 setup_temp_dir()
@@ -120,6 +135,7 @@ def parse_options(options_json):
         'position',  # Position name
         'style',  # Font style
         'watermark',  # File path
+        'overlay_path',  # Overlay file path
         'select_filter',  # Selected filter name
     }
 
@@ -483,6 +499,56 @@ def process_image(request):
         return JsonResponse({"success": False, "error": "Image file not found on server."}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "error": f"Processing error: {str(e)}"}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def upload_overlay_image(request):
+    """
+    Upload a PNG overlay image for the overlay tool.
+    Validates PNG format and saves to temp_overlays directory.
+    Returns file path and dimensions.
+    """
+    if 'overlay_file' not in request.FILES:
+        return JsonResponse({"success": False, "error": "No overlay file uploaded."}, status=400)
+
+    uploaded_file = request.FILES['overlay_file']
+
+    # Validate PNG format
+    if not uploaded_file.name.lower().endswith('.png'):
+        return JsonResponse({"success": False, "error": "Only PNG files are supported for overlays."}, status=400)
+
+    try:
+        # Generate unique filename
+        filename = f"overlay_{uuid.uuid4().hex[:12]}.png"
+        overlay_path = os.path.join(TEMP_OVERLAY_DIR, filename)
+
+        # Save the file
+        saved_path = default_storage.save(overlay_path, uploaded_file)
+
+        # Get dimensions
+        full_path = default_storage.path(saved_path)
+        with Image.open(full_path) as img:
+            width, height = img.size
+
+            # Verify it's actually a valid PNG with alpha channel
+            if img.mode not in ('RGBA', 'LA', 'P'):
+                # Convert to RGBA if needed
+                img = img.convert('RGBA')
+                img.save(full_path, 'PNG')
+
+        overlay_url = settings.MEDIA_URL + saved_path
+
+        return JsonResponse({
+            "success": True,
+            "overlay_path": saved_path,
+            "overlay_url": overlay_url,
+            "width": width,
+            "height": height
+        })
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": f"Failed to upload overlay: {str(e)}"}, status=500)
 
 
 @require_http_methods(["GET"])

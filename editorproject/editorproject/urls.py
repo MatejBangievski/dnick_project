@@ -12,6 +12,7 @@ urlpatterns = [
     path('', editor_views.editor_page, name='editor_page'),
 
     path('api/upload/initial/', editor_views.initial_upload, name='initial_upload'),
+    path('api/upload/overlay/', editor_views.upload_overlay_image, name='upload_overlay_image'),
     path('api/preview/', editor_views.preview_image, name='preview_image'), # NEW: For live non-committing updates
     path('api/process/', editor_views.process_image, name='process_image'), # COMMIT: For final "Apply Changes"
     path('api/reset_state/', editor_views.reset_image_state, name='reset_image_state'),
