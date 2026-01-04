@@ -4,7 +4,10 @@ from PIL import Image, ImageDraw, ImageFont
 from moviepy import VideoFileClip, ImageClip, CompositeVideoClip
 
 from editors.video.crop import VideoCropEditor
+from editors.video.loop import VideoLoopEditor
+from editors.video.mirror import VideoMirrorEditor
 from editors.video.resize import VideoResizeEditor
+from editors.video.rotate import VideoRotateEditor
 from editors.video.speed import VideoSpeedEditor
 from editors.video.colorEffects import *
 from editors.video.fade import VideoFadeEditor
@@ -30,6 +33,9 @@ fader = VideoFadeEditor()
 tinter = VideoTintEditor()
 watermarker = VideoImageWatermarkEditor()
 text_mark = VideoWatermarkEditor()
+rotator= VideoRotateEditor()
+mirrorer = VideoMirrorEditor()
+looper= VideoLoopEditor()
 
 
 print("--- Starting Individual Unit Tests ---")
@@ -48,6 +54,15 @@ grayer.edit(base_clip).write_videofile(f"{TEST_DIR}test_grayscale.mp4")
 # Test 3: Fading
 print("Testing: Fading...")
 fader.edit(base_clip, fade_in=2.0, fade_out=2.0).write_videofile(f"{TEST_DIR}test_fade.mp4")
+
+print("Testing: Rotation (90 degrees)...")
+rotator.edit(base_clip, angle=90).write_videofile(f"{TEST_DIR}test_rotate.mp4")
+
+print("Testing: Horizontal Mirror...")
+mirrorer.edit(base_clip, horizontal=True).write_videofile(f"{TEST_DIR}test_mirror.mp4")
+
+print("Testing: Looping (2 times)...")
+looper.edit(base_clip, n=2).write_videofile(f"{TEST_DIR}test_loop.mp4")
 
 print("Testing: Text Watermark...")
 text_mark.edit(
