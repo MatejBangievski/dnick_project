@@ -705,10 +705,12 @@
 
     <div class="settings-panel">
         <div class="tool-list">
-            <h3>Select Tool</h3>
-            {% for key, tool in template_tools.items %}
-            <button class="tool-button" data-tool-key="{{ key }}">{{ tool.name }}</button>
-            {% endfor %}
+        <h3>Select Tool</h3>
+        {% for key, tool in template_tools.items %}
+            {% if not key|slice:":6" == "video_" %}
+                <button class="tool-button" data-tool-key="{{ key }}">{{ tool.name }}</button>
+            {% endif %}
+        {% endfor %}
         </div>
 
         <div class="settings-content">
@@ -1258,6 +1260,10 @@
 
     function renderSettings(toolKey) {
         currentToolKey = toolKey;
+
+        {#if (textBoxOverlay) textBoxOverlay.classList.remove('active');#}
+        {#if (cropBoxOverlay) cropBoxOverlay.classList.remove('active');#}
+        {#if (overlayBoxOverlay) overlayBoxOverlay.classList.remove('active');#}
 
         // Show/hide text box overlay for subtitle tool
         if (toolKey === 'subtitle') {
@@ -2610,6 +2616,8 @@
 
                     if (copyData.success) {
                         workingFilePath = copyData.working_file_path;
+
+                        {#if (cropBoxOverlay) cropBoxOverlay.classList.remove('active');#}
 
                         // Update dimensions from backend
                         if (copyData.new_width && copyData.new_height) {

@@ -13,6 +13,8 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from PIL import Image
 from copy import deepcopy
+from celery.result import AsyncResult
+from .tasks import process_video_task
 
 # Attempt to import tools config; fall back to an empty dict so the module remains importable
 try:
@@ -582,3 +584,212 @@ def download_image(request):
         raise Http404("File not found.")
     except Exception as e:
         return JsonResponse({"success": False, "error": f"Download error: {str(e)}"}, status=500)
+
+
+# ==========================================================================================
+#                               VIDEO PROCESSING METHODS
+# ==========================================================================================
+
+def video_editor_page(request):
+    """
+    Renders the dedicated video editor page.
+    Filters the toolset to show only video-compatible tools.
+    """
+    current_tools = deepcopy(BASE_EDITOR_TOOLS)
+
+    serializable_tools = {}
+    for key, tool_config in current_tools.items():
+        if key.startswith('video_'):
+            serializable_tool_config = {
+                k: v for k, v in tool_config.items() if k != "editor_class"
+            }
+            serializable_tools[key] = serializable_tool_config
+
+    context = {
+        'template_tools': serializable_tools,
+        'js_editor_tools': json.dumps(serializable_tools),
+        'media_type': 'video'
+    }
+
+    return render(request, 'imageditor/video_editor_page.html', context)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def preview_video(request):
+    """
+    Triggers the background Celery task for video editing.
+    Returns a task_id so the frontend can poll for status.
+    """
+    try:
+        working_file_path = request.POST.get('working_file_path')
+        current_preview_path = request.POST.get('current_preview_path')
+        tool_key = request.POST.get('tool_key')
+        options_json = request.POST.get('options')
+
+        if not all([working_file_path, current_preview_path, tool_key, options_json]):
+            return JsonResponse({'error': 'Missing required parameters.'}, status=400)
+
+        options = parse_options(options_json)
+
+        task = process_video_task.delay(
+            tool_key,
+            options,
+            working_file_path,
+            current_preview_path
+        )
+
+        return JsonResponse({
+            "success": True,
+            "task_id": task.id
+        })
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@require_http_methods(["GET"])
+def check_task_status(request, task_id):
+    """
+    Endpoint for the frontend to check if the video is finished.
+    """
+    result = AsyncResult(task_id)
+
+    response_data = {
+        "task_id": task_id,
+        "status": result.status,
+    }
+
+    if result.status == 'SUCCESS':
+        file_path = result.result.get("preview_path")
+        if file_path:
+            url_path = file_path.replace('\\', '/')
+            response_data["preview_url"] = settings.MEDIA_URL + url_path
+            response_data["preview_file_path"] = file_path
+
+    elif result.status == 'FAILURE':
+        response_data["error"] = str(result.result)
+
+    return JsonResponse(response_data)
+
+
+@require_http_methods(["GET"])
+def download_video(request):
+    """
+    Handles the final download for processed videos.
+    """
+    file_path = request.GET.get('file_path')
+
+    if not file_path:
+        return JsonResponse({"success": False, "error": "Missing file path."}, status=400)
+
+    try:
+        if not default_storage.exists(file_path):
+            raise Http404("Video file not found.")
+
+        full_path = default_storage.path(file_path)
+        file_name = os.path.basename(file_path)
+
+        download_name = f"edited_video_{uuid.uuid4().hex[:8]}.mp4"
+
+        response = FileResponse(open(full_path, 'rb'), content_type='video/mp4')
+        response['Content-Disposition'] = f'attachment; filename="{download_name}"'
+        return response
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": f"Download error: {str(e)}"}, status=500)
+
+from moviepy import VideoFileClip
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def process_video(request):
+    """
+    Finalizes the video changes by copying the transient preview
+    video into the permanent working copy.
+    """
+    try:
+        working_file_path = request.POST.get('working_file_path')
+        preview_file_path = request.POST.get('preview_file_path')
+
+        if not working_file_path or not preview_file_path:
+            return JsonResponse({'error': 'Missing working or preview path.'}, status=400)
+
+        full_path_source = default_storage.path(preview_file_path)
+
+        with default_storage.open(full_path_source, 'rb') as source_file:
+            content = ContentFile(source_file.read())
+
+        if default_storage.exists(working_file_path):
+            default_storage.delete(working_file_path)
+
+        saved_path = default_storage.save(working_file_path, content)
+
+        return JsonResponse({
+            "success": True,
+            "working_file_path": saved_path,
+        })
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": f"Video Commit error: {str(e)}"}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def reset_video_state(request):
+    """
+    Resets the video by copying the original file back onto the working and preview files.
+    """
+    original_path = request.POST.get('original_file_path')
+    working_path = request.POST.get('working_file_path')
+    preview_path = request.POST.get('preview_file_path')
+
+    try:
+        with default_storage.open(original_path, 'rb') as f:
+            content = f.read()
+            if default_storage.exists(working_path): default_storage.delete(working_path)
+            default_storage.save(working_path, ContentFile(content))
+            if default_storage.exists(preview_path): default_storage.delete(preview_path)
+            default_storage.save(preview_path, ContentFile(content))
+
+        return JsonResponse({"success": True, "temp_video_url": settings.MEDIA_URL + original_path})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def initial_video_upload(request):
+    if 'video' not in request.FILES:
+        return JsonResponse({"success": False, "error": "No video uploaded."}, status=400)
+
+    uploaded_file = request.FILES['video']
+    name, ext = os.path.splitext(uploaded_file.name)
+    file_ext = (ext[1:] or 'mp4').lower()
+
+    orig_name, work_name, prev_name = generate_stable_file_paths(file_ext)
+
+    actual_original_path = default_storage.save(orig_name, uploaded_file)
+
+    with default_storage.open(actual_original_path) as f:
+        content = f.read()
+        actual_working_path = default_storage.save(work_name, ContentFile(content))
+        actual_preview_path = default_storage.save(prev_name, ContentFile(content))
+
+    try:
+        full_path = default_storage.path(actual_working_path)
+        with VideoFileClip(full_path) as clip:
+            width, height = clip.w, clip.h
+    except Exception as e:
+        print(f"Error getting video dimensions: {e}")
+        width, height = 0, 0
+
+    return JsonResponse({
+        "success": True,
+        "original_file_path": actual_original_path,  # Sync this with JS
+        "working_file_path": actual_working_path,
+        "preview_file_path": actual_preview_path,
+        "video_width": width,
+        "video_height": height,
+        "temp_video_url": settings.MEDIA_URL + actual_original_path  # Start with original
+    })
