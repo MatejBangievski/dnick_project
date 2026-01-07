@@ -1125,6 +1125,9 @@
                 fileInput.addEventListener('change', (e) => {
                     const file = e.target.files[0];
                     if (file) {
+                        // Reset input value to allow re-uploading the same file
+                        fileInput.value = '';
+
                         // Validate PNG
                         if (!file.name.toLowerCase().endsWith('.png')) {
                             fileStatus.textContent = 'Error: Only PNG files are supported';
@@ -2870,7 +2873,10 @@
 
             options.x = Math.max(0, Math.round(xPercent * currentImageWidth));
             options.y = Math.max(0, Math.round(yPercent * currentImageHeight));
-            options.scale = overlayBoxState.scale;
+
+            // Fix: Adjust scale to account for image scaling (similar to font size fix)
+            const scaleFactor = currentImageWidth / imgRect.width;
+            options.scale = overlayBoxState.scale * scaleFactor;
 
             formData.append('options', JSON.stringify(options));
 
@@ -3114,6 +3120,7 @@
     imageUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            imageUpload.value = ''; // Allow re-uploading the same file
             currentImageFile = file;
             handleInitialUpload(file);
         }
