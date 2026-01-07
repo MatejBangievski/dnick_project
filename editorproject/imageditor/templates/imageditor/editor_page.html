@@ -802,6 +802,19 @@
     let debounceTimer;
     let pendingUpdate = false;
 
+    // Helper to get the currently visible preview image (handles double buffering)
+    function getActivePreviewImage() {
+        // Return the visibly active image (not hidden)
+        if (previewImage && previewImage.style.visibility !== 'hidden' && previewImage.style.display !== 'none') {
+            return previewImage;
+        }
+        if (previewImageBuffer && previewImageBuffer.style.visibility !== 'hidden' && previewImageBuffer.style.display !== 'none') {
+            return previewImageBuffer;
+        }
+        // Fallback to default
+        return previewImage;
+    }
+
     function debounce(func, delay) {
         clearTimeout(debounceTimer);
         pendingUpdate = true;
@@ -1261,9 +1274,9 @@
     function renderSettings(toolKey) {
         currentToolKey = toolKey;
 
-        {#if (textBoxOverlay) textBoxOverlay.classList.remove('active');#}
-        {#if (cropBoxOverlay) cropBoxOverlay.classList.remove('active');#}
-        {#if (overlayBoxOverlay) overlayBoxOverlay.classList.remove('active');#}
+        if (textBoxOverlay) textBoxOverlay.classList.remove('active');
+        if (cropBoxOverlay) cropBoxOverlay.classList.remove('active');
+        if (overlayBoxOverlay) overlayBoxOverlay.classList.remove('active');
 
         // Show/hide text box overlay for subtitle tool
         if (toolKey === 'subtitle') {
@@ -1366,33 +1379,50 @@
     // --- Text Box Drag and Resize Functionality ---
 
     function initializeTextBox() {
-        // Get the visible preview image dimensions
-        const imgRect = previewImage.getBoundingClientRect();
-        const previewRect = previewArea.getBoundingClientRect();
+        // Wait for image to be properly rendered before initializing
+        const initializeWhenReady = () => {
+             const activeImg = getActivePreviewImage();
+             // Get the visible preview image dimensions
+             const imgRect = activeImg.getBoundingClientRect();
+             const previewRect = previewArea.getBoundingClientRect();
 
-        // Calculate position relative to preview area
-        const imgOffsetX = imgRect.left - previewRect.left;
-        const imgOffsetY = imgRect.top - previewRect.top;
+             // Check if image has proper dimensions (not loading state)
+             if (imgRect.width === 0 || imgRect.height === 0) {
+                 // Image not ready yet, wait a bit
+                 requestAnimationFrame(initializeWhenReady);
+                 return;
+             }
 
-        // Default: center of image (changed from bottom position)
-        const defaultWidth = Math.min(300, imgRect.width * 0.6);
-        const defaultHeight = Math.min(100, imgRect.height * 0.15);
-        const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
-        const defaultY = imgOffsetY + (imgRect.height - defaultHeight) / 2;  // Center vertically
+             // Calculate position relative to preview area
+             const imgOffsetX = imgRect.left - previewRect.left;
+             const imgOffsetY = imgRect.top - previewRect.top;
 
-        textBoxState = {
-            x: defaultX,
-            y: defaultY,
-            width: defaultWidth,
-            height: defaultHeight
+             // Default: center of image (changed from bottom position)
+             const defaultWidth = Math.min(300, imgRect.width * 0.6);
+             const defaultHeight = Math.min(100, imgRect.height * 0.15);
+             const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
+             const defaultY = imgOffsetY + (imgRect.height - defaultHeight) / 2;  // Center vertically
+
+             textBoxState = {
+                 x: defaultX,
+                 y: defaultY,
+                 width: defaultWidth,
+                 height: defaultHeight
+             };
+
+             updateTextBoxPosition();
         };
 
-        updateTextBoxPosition();
+        // Start initialization with animation frame delay
+        requestAnimationFrame(() => {
+            requestAnimationFrame(initializeWhenReady);
+        });
     }
 
     function updateTextBoxPosition() {
+        const activeImg = getActivePreviewImage();
         // Get image boundaries
-        const imgRect = previewImage.getBoundingClientRect();
+        const imgRect = activeImg.getBoundingClientRect();
         const previewRect = previewArea.getBoundingClientRect();
         const imgOffsetX = imgRect.left - previewRect.left;
         const imgOffsetY = imgRect.top - previewRect.top;
@@ -1625,8 +1655,9 @@
         overlayPreviewImg.onload = () => {
             // Now wait for both images to be properly rendered
             const initializeWhenReady = () => {
+                const activeImg = getActivePreviewImage();
                 // Get the visible preview image dimensions
-                const imgRect = previewImage.getBoundingClientRect();
+                const imgRect = activeImg.getBoundingClientRect();
                 const previewRect = previewArea.getBoundingClientRect();
 
                 // Check if image has proper dimensions (not loading state)
@@ -1693,7 +1724,8 @@
     function positionOverlayBox(position) {
         if (!overlayBoxState.overlayPath) return;
 
-        const imgRect = previewImage.getBoundingClientRect();
+        const activeImg = getActivePreviewImage();
+        const imgRect = activeImg.getBoundingClientRect();
         const previewRect = previewArea.getBoundingClientRect();
         const imgOffsetX = imgRect.left - previewRect.left;
         const imgOffsetY = imgRect.top - previewRect.top;
@@ -1727,8 +1759,9 @@
     }
 
     function updateOverlayBoxPosition() {
+        const activeImg = getActivePreviewImage();
         // Get image boundaries
-        const imgRect = previewImage.getBoundingClientRect();
+        const imgRect = activeImg.getBoundingClientRect();
         const previewRect = previewArea.getBoundingClientRect();
         const imgOffsetX = imgRect.left - previewRect.left;
         const imgOffsetY = imgRect.top - previewRect.top;
@@ -1776,8 +1809,9 @@
     function initializeCropBox() {
         // Wait for image to be properly rendered before initializing
         const initializeWhenReady = () => {
+            const activeImg = getActivePreviewImage();
             // Get the visible preview image dimensions
-            const imgRect = previewImage.getBoundingClientRect();
+            const imgRect = activeImg.getBoundingClientRect();
             const previewRect = previewArea.getBoundingClientRect();
 
             // Check if image has proper dimensions (not loading state)
@@ -1810,7 +1844,9 @@
             updateCropAspectDisplay();
 
             // NOW show the crop box after initialization is complete
-            cropBoxOverlay.classList.add('active');
+            if (currentToolKey === 'crop') {
+                cropBoxOverlay.classList.add('active');
+            }
         };
 
         // Start initialization with animation frame delay
@@ -1820,8 +1856,9 @@
     }
 
     function updateCropBoxPosition() {
+        const activeImg = getActivePreviewImage();
         // Get image boundaries
-        const imgRect = previewImage.getBoundingClientRect();
+        const imgRect = activeImg.getBoundingClientRect();
         const previewRect = previewArea.getBoundingClientRect();
         const imgOffsetX = imgRect.left - previewRect.left;
         const imgOffsetY = imgRect.top - previewRect.top;
@@ -1848,8 +1885,9 @@
     }
 
     function updateCropAspectDisplay() {
+        const activeImg = getActivePreviewImage();
         // Get image boundaries to calculate actual pixel dimensions
-        const imgRect = previewImage.getBoundingClientRect();
+        const imgRect = activeImg.getBoundingClientRect();
         const previewRect = previewArea.getBoundingClientRect();
         const imgOffsetX = imgRect.left - previewRect.left;
         const imgOffsetY = imgRect.top - previewRect.top;
@@ -2045,7 +2083,8 @@
         }
 
         // Get image boundaries to constrain crop box
-        const imgRect = previewImage.getBoundingClientRect();
+        const activeImg = getActivePreviewImage();
+        const imgRect = activeImg.getBoundingClientRect();
         const previewRect = previewArea.getBoundingClientRect();
         const imgOffsetX = imgRect.left - previewRect.left;
         const imgOffsetY = imgRect.top - previewRect.top;
@@ -2201,7 +2240,8 @@
         }
 
         // Get image boundaries to constrain resizing
-        const imgRect = previewImage.getBoundingClientRect();
+        const activeImg = getActivePreviewImage();
+        const imgRect = activeImg.getBoundingClientRect();
         const previewRect = previewArea.getBoundingClientRect();
         const imgOffsetX = imgRect.left - previewRect.left;
         const imgOffsetY = imgRect.top - previewRect.top;
@@ -2443,6 +2483,15 @@
             const widthPercent = textBoxState.width / imgRect.width;
             const heightPercent = textBoxState.height / imgRect.height;
 
+            // BUG FIX: Scale font size and stroke width proportionally to image scaling
+            if (options.font_size) {
+                 const scaleFactor = currentImageWidth / imgRect.width;
+                 options.font_size = Math.round(options.font_size * scaleFactor);
+                 if (options.stroke_width) {
+                     options.stroke_width = Math.round(options.stroke_width * scaleFactor);
+                 }
+            }
+
             // Send as pixel coordinates based on actual image dimensions
             options.box = [
                 Math.round(xPercent * currentImageWidth),
@@ -2484,7 +2533,8 @@
         // For overlay tool, calculate and send overlay box coordinates relative to image
         if (currentToolKey === 'overlay') {
             if (overlayBoxState.overlayPath) {
-                const imgRect = previewImage.getBoundingClientRect();
+                const activeImg = getActivePreviewImage();
+                const imgRect = activeImg.getBoundingClientRect();
                 const previewRect = previewArea.getBoundingClientRect();
                 const imgOffsetX = imgRect.left - previewRect.left;
                 const imgOffsetY = imgRect.top - previewRect.top;
@@ -2617,7 +2667,7 @@
                     if (copyData.success) {
                         workingFilePath = copyData.working_file_path;
 
-                        {#if (cropBoxOverlay) cropBoxOverlay.classList.remove('active');#}
+                        if (cropBoxOverlay) cropBoxOverlay.classList.remove('active');
 
                         // Update dimensions from backend
                         if (copyData.new_width && copyData.new_height) {
@@ -2655,6 +2705,7 @@
                             filterButton.click();
                         }
 
+                        applyButton.disabled = true;
                         alert("Crop successfully applied to the image.");
                     } else {
                         alert('Error: ' + copyData.error);
@@ -2705,6 +2756,15 @@
             const yPercent = relY / imgRect.height;
             const widthPercent = textBoxState.width / imgRect.width;
             const heightPercent = textBoxState.height / imgRect.height;
+
+            // BUG FIX: Scale font size and stroke width proportionally to image scaling
+            if (options.font_size) {
+                 const scaleFactor = currentImageWidth / imgRect.width;
+                 options.font_size = Math.round(options.font_size * scaleFactor);
+                 if (options.stroke_width) {
+                     options.stroke_width = Math.round(options.stroke_width * scaleFactor);
+                 }
+            }
 
             options.box = [
                 Math.round(xPercent * currentImageWidth),
@@ -2796,7 +2856,8 @@
             });
 
             // Calculate and add overlay box coordinates
-            const imgRect = previewImage.getBoundingClientRect();
+            const activeImg = getActivePreviewImage();
+            const imgRect = activeImg.getBoundingClientRect();
             const previewRect = previewArea.getBoundingClientRect();
             const imgOffsetX = imgRect.left - previewRect.left;
             const imgOffsetY = imgRect.top - previewRect.top;

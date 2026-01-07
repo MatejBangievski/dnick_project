@@ -25,7 +25,6 @@ EDITOR_TOOLS = {
                     {"value": "contrast", "label": "Contrast"},
                     {"value": "blur", "label": "Blur (Radius)"},
                     {"value": "sharpen", "label": "Sharpen (Strength)"},
-                    {"value": "edge_enhance", "label": "Edge Enhance"},
                 ]
             },
             {
@@ -36,7 +35,7 @@ EDITOR_TOOLS = {
                 "max": 5.0,
                 "step": 0.1,
                 "default": 1.0,
-                "applies_to": ["brighten", "contrast", "sepia"]
+                "applies_to": ["brighten", "contrast", "sharpen"]
             },
             {
                 "id": "radius",
