@@ -609,6 +609,17 @@
             color: white;
         }
 
+        .ai-editor-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        .ai-editor-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5568d3 0%, #653a8b 100%);
+            transform: translateY(-1px);
+        }
+
         .loading {
             position: absolute;
             top: 0;
@@ -724,6 +735,7 @@
             <button id="apply-button" class="apply-btn" disabled>Apply Changes</button>
             <button id="reset-button" class="reset-btn" disabled>Reset Preview</button>
             <button id="download-button" class="download-btn" disabled>Download Image</button>
+            <button id="ai-editor-button" class="ai-editor-btn" disabled>AI Editor</button>
         </div>
     </div>
 </div>
@@ -740,6 +752,7 @@
     const applyButton = document.getElementById('apply-button');
     const resetButton = document.getElementById('reset-button');
     const downloadButton = document.getElementById('download-button');
+    const aiEditorButton = document.getElementById('ai-editor-button');
     const loadingOverlay = document.getElementById('loading-overlay');
     const textBoxOverlay = document.getElementById('text-box-overlay');
     const textBoxContent = document.getElementById('text-box-content');
@@ -2335,6 +2348,7 @@
 
                 resetButton.disabled = false;
                 downloadButton.disabled = false;
+                aiEditorButton.disabled = false;
 
                 toolButtons.forEach(btn => btn.classList.remove('active'));
                 settingsTitle.textContent = "Select a Tool";
@@ -3112,6 +3126,20 @@
             window.location.href = `{% url "download_image" %}?file_path=${workingFilePath}`;
         } else {
             alert("No image is currently available for download.");
+        }
+    });
+
+    // AI Editor Button - Transfer image to AI page
+    aiEditorButton.addEventListener('click', () => {
+        if (originalFilePath && workingFilePath && previewFilePath) {
+            // Build URL with image paths as query parameters
+            const aiEditorUrl = '{% url "ai_editor_page" %}' +
+                `?original_path=${encodeURIComponent(originalFilePath)}` +
+                `&working_path=${encodeURIComponent(workingFilePath)}` +
+                `&preview_path=${encodeURIComponent(previewFilePath)}`;
+            window.location.href = aiEditorUrl;
+        } else {
+            alert("No image is currently loaded.");
         }
     });
 

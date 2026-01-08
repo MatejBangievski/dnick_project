@@ -10,6 +10,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', editor_views.editor_page, name='editor_page'),
     path('video-editor/', editor_views.video_editor_page, name='video_editor_page'),
+    path('ai-editor/', editor_views.ai_editor_page, name='ai_editor_page'),
 
     path('api/upload/initial/', editor_views.initial_upload, name='initial_upload'),
     path('api/upload/overlay/', editor_views.upload_overlay_image, name='upload_overlay_image'),
@@ -24,6 +25,7 @@ urlpatterns = [
     path('api/download-video/', editor_views.download_video, name='download_video'),
     path('api/process-video/', editor_views.process_video, name='process_video'), # Fixes the NoReverseMatch
     path('api/reset-video/', editor_views.reset_video_state, name='reset_video_state'), # Fixes the NoReverseMatch
+    path('api/generate-ai-image/', editor_views.generate_ai_image, name='generate_ai_image'),
 ]
 
 if settings.DEBUG:

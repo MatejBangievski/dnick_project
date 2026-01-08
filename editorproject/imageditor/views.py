@@ -16,6 +16,15 @@ from copy import deepcopy
 from celery.result import AsyncResult
 from .tasks import process_video_task
 
+# Google Gemini imports for AI image generation
+try:
+    from google import genai
+    from google.genai import types
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+    print("\n!!! WARNING: google-genai library not installed. AI editor features will be disabled. !!!\n")
+
 # Attempt to import tools config; fall back to an empty dict so the module remains importable
 try:
     from .config import EDITOR_TOOLS as BASE_EDITOR_TOOLS
@@ -30,6 +39,7 @@ EDITOR_TOOLS = deepcopy(BASE_EDITOR_TOOLS)
 # --- Configuration ---
 TEMP_IMAGE_DIR = 'temp_edited_images'
 TEMP_OVERLAY_DIR = 'temp_overlays'
+AI_EDITED_IMAGE_DIR = 'temp_edited_images'  # Store AI-generated images in temp directory for session cleanup
 
 
 # ... (Cleanup Logic, atexit.register, setup_temp_dir, generate_temp_file_path, parse_options remain unchanged)
@@ -793,3 +803,141 @@ def initial_video_upload(request):
         "video_height": height,
         "temp_video_url": settings.MEDIA_URL + actual_original_path  # Start with original
     })
+
+
+# ============================================
+# AI EDITOR VIEWS (Gemini 2.5 Flash Integration)
+# ============================================
+
+def ai_editor_page(request):
+    """
+    Renders the AI image generation page with chatbot interface.
+    Allows transferring images from the main editor via URL parameters.
+    """
+    # Get image paths from URL parameters if coming from editor
+    original_path = request.GET.get('original_path', '')
+    working_path = request.GET.get('working_path', '')
+    preview_path = request.GET.get('preview_path', '')
+
+    context = {
+        'original_path': original_path,
+        'working_path': working_path,
+        'preview_path': preview_path,
+        'has_image': bool(preview_path),
+        'gemini_available': GEMINI_AVAILABLE,
+    }
+
+    return render(request, 'imageditor/ai_editor_page.html', context)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def generate_ai_image(request):
+    """
+    API endpoint for AI image generation using Google Gemini 2.5 Flash.
+    Accepts an image and text prompt, returns the AI-generated result.
+    """
+    if not GEMINI_AVAILABLE:
+        return JsonResponse({
+            "success": False,
+            "error": "Google Gemini API is not available. Please install google-genai library."
+        }, status=500)
+
+    try:
+        # Get the prompt text
+        prompt = request.POST.get('prompt', '').strip()
+        if not prompt:
+            return JsonResponse({"success": False, "error": "Prompt text is required."}, status=400)
+
+        # Get the image - either from file upload or existing path
+        image_data = None
+        image_path = request.POST.get('image_path', '')
+
+        if 'image' in request.FILES:
+            # New image uploaded
+            uploaded_file = request.FILES['image']
+            image_data = uploaded_file.read()
+        elif image_path and default_storage.exists(image_path):
+            # Use existing image from editor
+            with default_storage.open(image_path, 'rb') as f:
+                image_data = f.read()
+        else:
+            return JsonResponse({"success": False, "error": "No image provided."}, status=400)
+
+        # Get API key from environment
+        api_key = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
+        if not api_key:
+            return JsonResponse({
+                "success": False,
+                "error": "GEMINI_API_KEY or GOOGLE_API_KEY environment variable not set."
+            }, status=500)
+
+        # Initialize Gemini client
+        client = genai.Client(api_key=api_key)
+
+        # Prepare the prompt with image
+        model = "gemini-2.5-flash-image"
+        contents = [
+            types.Content(
+                role="user",
+                parts=[
+                    types.Part.from_text(text=prompt),
+                    types.Part.from_bytes(data=image_data, mime_type="image/png"),
+                ],
+            ),
+        ]
+
+        generate_content_config = types.GenerateContentConfig(
+            response_modalities=["IMAGE", "TEXT"],
+        )
+
+        # Generate AI image
+        generated_image_data = None
+        response_text = ""
+
+        for chunk in client.models.generate_content_stream(
+            model=model,
+            contents=contents,
+            config=generate_content_config,
+        ):
+            if chunk.candidates and chunk.candidates[0].content and chunk.candidates[0].content.parts:
+                part = chunk.candidates[0].content.parts[0]
+
+                # Check for image data
+                if part.inline_data and part.inline_data.data:
+                    generated_image_data = part.inline_data.data
+                    break
+                # Collect text responses
+                elif hasattr(chunk, 'text') and chunk.text:
+                    response_text += chunk.text
+
+        if not generated_image_data:
+            error_msg = "No image generated. " + (response_text if response_text else "The AI did not return an image.")
+            return JsonResponse({"success": False, "error": error_msg}, status=500)
+
+        # Save the generated image to temporary storage
+        ai_image_filename = f"ai_{uuid.uuid4()}.png"
+        ai_image_path = os.path.join(AI_EDITED_IMAGE_DIR, ai_image_filename)
+
+        # Save using Django storage
+        saved_path = default_storage.save(ai_image_path, ContentFile(generated_image_data))
+
+        # Return success with image URL
+        ai_image_url = settings.MEDIA_URL + saved_path
+
+        return JsonResponse({
+            "success": True,
+            "image_url": ai_image_url,
+            "image_path": saved_path,
+            "message": response_text if response_text else "Image generated successfully"
+        })
+
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"[AI Generation Error] {error_details}")
+        return JsonResponse({
+            "success": False,
+            "error": f"AI generation failed: {str(e)}"
+        }, status=500)
+

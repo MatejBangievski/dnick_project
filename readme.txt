@@ -1,12 +1,12 @@
 TODO:
-    5. Add OpenAI Integration for Image editing
-    6. Final Optimizations
-    7. Beautify the UI, favicon etc.
-    (Optional) See if we can further improve the image loading, caching or whatever.
+    * Final Optimizations
+    * Beautify the UI, favicon etc.
 
 bugs:
 Not Found: /media/font_previews/courier.png
 Not Found: /media/font_previews/trebuchet.png
+There might still be a weird edge case with the text placement where it's offset.
 
-slight offset in the overlay picture.
-bug when first time opening the crop feature
+notes:
+for AI Images you need pip install google-genai
+and export GOOGLE_API_KEY=key
