@@ -1,8 +1,8 @@
 from PIL import Image
-from editorproject.imageditor.editors.resize import ResizeEditor
-from editorproject.imageditor.editors.crop import CropEditor
-from editorproject.imageditor.editors.rotate import RotateEditor
-from editorproject.imageditor.editors.filter import FilterEditor
+from editors.image.resize import ResizeEditor
+from editors.image.crop import CropEditor
+from editors.image.rotate import RotateEditor
+from editors.image.filter import FilterEditor
 
 # Load the original image
 img_path = "../resources/sheep.png"
