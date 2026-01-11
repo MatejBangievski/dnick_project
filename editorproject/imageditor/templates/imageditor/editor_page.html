@@ -1,0 +1,3198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Editor 2025</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --bg-light: #f4f4f7;
+            --bg-dark: #ffffff;
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: #333;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .editor-layout {
+            display: flex;
+            width: 90vw;
+            height: 90vh;
+            background-color: var(--bg-dark);
+            box-shadow: var(--shadow-md);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        /* LEFT SIDE: Preview & Upload (2/3 width) */
+        .preview-area {
+            flex: 2;
+            position: relative;
+            background-color: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #image-upload {
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 5;
+        }
+
+        #image-upload.disabled {
+            pointer-events: none;
+            display: none;
+        }
+
+        /* Upload New Picture Button */
+        .upload-new-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 6;
+            display: none;
+            box-shadow: var(--shadow-md);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .upload-new-btn:hover {
+            background-color: #0056b3;
+            transform: translateX(-50%) translateY(-2px);
+        }
+
+        .upload-new-btn:active {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Draggable Text Box for Subtitle Tool */
+        .text-box-overlay {
+            position: absolute;
+            display: none;
+            border: 2px dashed var(--primary-color);
+            background: rgba(0, 123, 255, 0.1);
+            cursor: move;
+            z-index: 3;
+            min-width: 100px;
+            min-height: 50px;
+            box-sizing: border-box;
+        }
+
+        .text-box-overlay.active {
+            display: block;
+        }
+
+        .text-box-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            color: #FFFFFF;
+            text-align: center;
+            white-space: pre-line;
+            line-height: 1.2;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Resize handles */
+        .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--primary-color);
+            border: 2px solid white;
+            border-radius: 50%;
+            z-index: 4;
+        }
+
+        .resize-handle.nw {
+            top: -6px;
+            left: -6px;
+            cursor: nw-resize;
+        }
+
+        .resize-handle.ne {
+            top: -6px;
+            right: -6px;
+            cursor: ne-resize;
+        }
+
+        .resize-handle.sw {
+            bottom: -6px;
+            left: -6px;
+            cursor: sw-resize;
+        }
+
+        .resize-handle.se {
+            bottom: -6px;
+            right: -6px;
+            cursor: se-resize;
+        }
+
+        /* Crop Box Overlay */
+        .crop-box-overlay {
+            position: absolute;
+            display: none;
+            border: 2px solid #00ff00;
+            background: transparent;
+            cursor: move;
+            z-index: 3;
+            min-width: 50px;
+            min-height: 50px;
+            box-sizing: border-box;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+
+        .crop-box-overlay.active {
+            display: block;
+        }
+
+        /* Grid lines for rule of thirds */
+        .crop-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .crop-grid-line {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .crop-grid-line.horizontal {
+            width: 100%;
+            height: 1px;
+        }
+
+        .crop-grid-line.vertical {
+            width: 1px;
+            height: 100%;
+        }
+
+        .crop-grid-line:nth-child(1) {
+            top: 33.333%;
+        }
+
+        .crop-grid-line:nth-child(2) {
+            top: 66.666%;
+        }
+
+        .crop-grid-line:nth-child(3) {
+            left: 33.333%;
+        }
+
+        .crop-grid-line:nth-child(4) {
+            left: 66.666%;
+        }
+
+        /* Aspect ratio display */
+        .crop-aspect-display {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .crop-dimensions-display {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Overlay Box for PNG Overlay Tool */
+        .overlay-box-overlay {
+            position: absolute;
+            display: none;
+            border: 2px solid #9c27b0;
+            background: rgba(156, 39, 176, 0.1);
+            cursor: move;
+            z-index: 3;
+            min-width: 30px;
+            min-height: 30px;
+            box-sizing: border-box;
+        }
+
+        .overlay-box-overlay.active {
+            display: block;
+        }
+
+        .overlay-box-overlay img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+
+        .overlay-dimensions-display {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(156, 39, 176, 0.9);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* File upload styling for overlay tool */
+        .file-upload-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .file-upload-button {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .file-upload-button:hover {
+            background-color: #0056b3;
+        }
+
+        .file-upload-input {
+            display: none;
+        }
+
+        .file-upload-status {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--secondary-color);
+        }
+
+        .file-upload-status.success {
+            color: var(--success-color);
+        }
+
+        .file-upload-status.error {
+            color: #dc3545;
+        }
+
+        .upload-prompt {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border: 3px dashed var(--secondary-color);
+            border-radius: var(--border-radius);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--secondary-color);
+            pointer-events: none;
+            transition: border-color 0.3s;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .upload-prompt.hidden {
+            display: none;
+        }
+
+        .upload-prompt p {
+            font-size: 1.1em;
+        }
+
+        /* Two stacked preview images for seamless swapping (no fade) */
+        #preview-image,
+        #preview-image-buffer {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+            z-index: 1;
+
+            position: absolute;
+            inset: 0;
+            margin: auto;
+
+            /* Prevent image dragging */
+            user-select: none;
+            -webkit-user-drag: none;
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            pointer-events: none;
+        }
+
+        #preview-image-buffer {
+            visibility: hidden;
+        }
+
+        /* RIGHT SIDE: Tools and Settings (1/3 width) */
+        .settings-panel {
+            flex: 1;
+            background-color: var(--bg-light);
+            border-left: 1px solid #ddd;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .tool-list {
+            margin-bottom: 20px;
+        }
+
+        .tool-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border: none;
+            border-radius: var(--border-radius);
+            background-color: var(--bg-dark);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        .tool-button:hover {
+            background-color: #f0f0f5;
+        }
+
+        .tool-button.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+        }
+
+        .settings-content {
+            flex-grow: 1;
+        }
+
+        .setting-group {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .setting-group:last-child {
+            border-bottom: none;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .setting-group input[type="range"] {
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .input-range-value {
+            float: right;
+            font-weight: normal;
+            color: var(--primary-color);
+        }
+
+        /* NEW STYLES for Button Group */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .button-group .preset-btn {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid var(--secondary-color);
+            border-radius: 4px;
+            background-color: #fff;
+            color: var(--secondary-color);
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            font-size: 0.9em;
+        }
+
+        .button-group .preset-btn:hover {
+            background-color: #f0f0f5;
+            border-color: var(--primary-color);
+        }
+
+        .button-group .preset-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* FONT CAROUSEL STYLES */
+        .font-carousel-container {
+            margin-top: 10px;
+        }
+
+        .font-carousel {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            padding: 10px 0;
+            scroll-behavior: smooth;
+        }
+
+        .font-carousel::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .font-carousel::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .font-carousel::-webkit-scrollbar-thumb {
+            background: var(--secondary-color);
+            border-radius: 4px;
+        }
+
+        .font-option {
+            flex: 0 0 auto;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .font-option:hover {
+            transform: scale(1.05);
+        }
+
+        .font-preview-box {
+            width: 90px;
+            height: 90px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 6px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .font-preview-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .font-option.selected .font-preview-box {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+        }
+
+        .font-label {
+            font-size: 0.75em;
+            color: #666;
+            max-width: 90px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .font-option.selected .font-label {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* END NEW STYLES */
+
+        .action-buttons {
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .action-buttons button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+
+        .action-buttons button:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .apply-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .reset-btn {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .download-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .ai-editor-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        .ai-editor-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5568d3 0%, #653a8b 100%);
+            transform: translateY(-1px);
+        }
+
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            color: var(--primary-color);
+            z-index: 10;
+        }
+
+        /* Subtle processing indicator for live previews */
+        .preview-area.processing::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.05);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .preview-area.processing #preview-image,
+        .preview-area.processing #preview-image-buffer {
+            opacity: 0.95;
+            transition: opacity 0.1s ease-out;
+        }
+    </style>
+</head>
+<body>
+<div class="editor-layout">
+    <div class="preview-area" id="preview-area">
+        <input type="file" id="image-upload" accept="image/*">
+
+        <div class="upload-prompt" id="upload-prompt">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" viewBox="0 0 16 16"
+                 style="margin-bottom: 10px;">
+                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a.5.5 0 0 0 .5.5h12a.5.5 0 0 0 .5-.5v-2.5a.5.5 0 0 1 1 0v2.5a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 0 12.9v-2.5a.5.5 0 0 1 .5-.5"/>
+                <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V10.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z"/>
+            </svg>
+            <h3>Drop Image Here</h3>
+            <p>or click anywhere in this box to upload.</p>
+        </div>
+
+        <img id="preview-image" alt="Image Preview" draggable="false">
+        <img id="preview-image-buffer" alt="" aria-hidden="true" draggable="false">
+
+        <!-- Draggable Text Box for Subtitle Tool -->
+        <div class="text-box-overlay" id="text-box-overlay">
+            <div class="text-box-content" id="text-box-content">Your text here</div>
+            <div class="resize-handle nw" data-direction="nw"></div>
+            <div class="resize-handle ne" data-direction="ne"></div>
+            <div class="resize-handle sw" data-direction="sw"></div>
+            <div class="resize-handle se" data-direction="se"></div>
+        </div>
+
+        <!-- Crop Box Overlay -->
+        <div class="crop-box-overlay" id="crop-box-overlay">
+            <div class="crop-grid">
+                <div class="crop-grid-line horizontal"></div>
+                <div class="crop-grid-line horizontal"></div>
+                <div class="crop-grid-line vertical"></div>
+                <div class="crop-grid-line vertical"></div>
+            </div>
+            <div class="crop-aspect-display" id="crop-aspect-display">16:9</div>
+            <div class="crop-dimensions-display" id="crop-dimensions-display">1920x1080</div>
+            <div class="resize-handle nw" data-direction="nw"></div>
+            <div class="resize-handle ne" data-direction="ne"></div>
+            <div class="resize-handle sw" data-direction="sw"></div>
+            <div class="resize-handle se" data-direction="se"></div>
+        </div>
+
+        <!-- Overlay Box for PNG Overlay Tool -->
+        <div class="overlay-box-overlay" id="overlay-box-overlay">
+            <img id="overlay-preview-img" src="" alt="Overlay Preview">
+            <div class="overlay-dimensions-display" id="overlay-dimensions-display">0x0</div>
+            <div class="resize-handle nw" data-direction="nw"></div>
+            <div class="resize-handle ne" data-direction="ne"></div>
+            <div class="resize-handle sw" data-direction="sw"></div>
+            <div class="resize-handle se" data-direction="se"></div>
+        </div>
+
+        <!-- Upload New Picture Button -->
+        <button class="upload-new-btn" id="upload-new-btn">Upload New Picture</button>
+
+        <div class="loading" id="loading-overlay">Processing...</div>
+    </div>
+
+    <div class="settings-panel">
+        <div class="tool-list">
+        <h3>Select Tool</h3>
+        {% for key, tool in template_tools.items %}
+            {% if not key|slice:":6" == "video_" %}
+                <button class="tool-button" data-tool-key="{{ key }}">{{ tool.name }}</button>
+            {% endif %}
+        {% endfor %}
+        </div>
+
+        <div class="settings-content">
+            <h4 id="settings-title">Tool Settings</h4>
+            <div id="tool-settings">
+                <p>Upload an image and select a tool to start.</p>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button id="apply-button" class="apply-btn" disabled>Apply Changes</button>
+            <button id="reset-button" class="reset-btn" disabled>Reset Preview</button>
+            <button id="download-button" class="download-btn" disabled>Download Image</button>
+            <button id="ai-editor-button" class="ai-editor-btn" disabled>AI Editor</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const imageUpload = document.getElementById('image-upload');
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const previewImage = document.getElementById('preview-image');
+    const previewImageBuffer = document.getElementById('preview-image-buffer');
+    const previewArea = document.getElementById('preview-area');
+    const toolButtons = document.querySelectorAll('.tool-button');
+    const settingsTitle = document.getElementById('settings-title');
+    const toolSettingsDiv = document.getElementById('tool-settings');
+    const applyButton = document.getElementById('apply-button');
+    const resetButton = document.getElementById('reset-button');
+    const downloadButton = document.getElementById('download-button');
+    const aiEditorButton = document.getElementById('ai-editor-button');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const textBoxOverlay = document.getElementById('text-box-overlay');
+    const textBoxContent = document.getElementById('text-box-content');
+    const uploadNewBtn = document.getElementById('upload-new-btn');
+    const cropBoxOverlay = document.getElementById('crop-box-overlay');
+    const cropAspectDisplay = document.getElementById('crop-aspect-display');
+    const cropDimensionsDisplay = document.getElementById('crop-dimensions-display');
+    const overlayBoxOverlay = document.getElementById('overlay-box-overlay');
+    const overlayPreviewImg = document.getElementById('overlay-preview-img');
+    const overlayDimensionsDisplay = document.getElementById('overlay-dimensions-display');
+
+    let currentImageFile = null;
+
+    let originalFilePath = null; // Immutable source
+    let workingFilePath = null;  // Committed state (Source for Apply/Download)
+    let previewFilePath = null;  // Transient state (What the user sees during live preview)
+
+    let currentToolKey = null;
+
+    // NEW: Store dimensions of the currently uploaded image
+    let currentImageWidth = 0;
+    let currentImageHeight = 0;
+
+    // Text box state (position and size relative to preview image)
+    let textBoxState = {
+        x: 0,      // X position in pixels
+        y: 0,      // Y position in pixels
+        width: 300,  // Width in pixels
+        height: 100  // Height in pixels
+    };
+
+    // Crop box state (position and size relative to preview area)
+    let cropBoxState = {
+        x: 0,
+        y: 0,
+        width: 400,
+        height: 300,
+        aspectRatio: null,  // null for free crop, or numeric ratio (e.g., 16/9)
+        lockedAspect: false
+    };
+
+    // Overlay box state (position and size relative to preview area)
+    let overlayBoxState = {
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 200,
+        scale: 1.0,
+        overlayPath: null,
+        overlayOriginalWidth: 0,
+        overlayOriginalHeight: 0,
+        aspectRatio: 1.0
+    };
+
+    // Deep copy of the EDITOR_TOOLS config to safely modify defaults for the current session
+    const EDITOR_TOOLS_CONFIG = JSON.parse('{{ js_editor_tools|safe }}'.replace(/&quot;/g, '"'));
+    const EDITOR_TOOLS = JSON.parse(JSON.stringify(EDITOR_TOOLS_CONFIG)); // Deep copy
+
+    // --- Optimization: Debounce Utility ---
+    let debounceTimer;
+    let pendingUpdate = false;
+
+    // Helper to get the currently visible preview image (handles double buffering)
+    function getActivePreviewImage() {
+        // Return the visibly active image (not hidden)
+        if (previewImage && previewImage.style.visibility !== 'hidden' && previewImage.style.display !== 'none') {
+            return previewImage;
+        }
+        if (previewImageBuffer && previewImageBuffer.style.visibility !== 'hidden' && previewImageBuffer.style.display !== 'none') {
+            return previewImageBuffer;
+        }
+        // Fallback to default
+        return previewImage;
+    }
+
+    function debounce(func, delay) {
+        clearTimeout(debounceTimer);
+        pendingUpdate = true;
+        debounceTimer = setTimeout(() => {
+            pendingUpdate = false;
+            func();
+        }, delay);
+    }
+
+    // --- Utility Functions ---
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    function createSettingInput(option) {
+        const group = document.createElement('div');
+        group.className = 'setting-group';
+        if (option.hasOwnProperty('applies_to')) {
+            group.setAttribute('data-applies-to', option.applies_to.join(','));
+            group.style.display = 'none';
+        }
+
+        const label = document.createElement('label');
+        label.setAttribute('for', option.id);
+        label.textContent = option.label;
+
+        let input;
+
+        switch (option.type) {
+            case 'slider':
+                input = document.createElement('input');
+                input.type = 'range';
+                input.id = option.id;
+                input.name = option.id;
+                input.min = option.min || 0;
+                input.max = option.max || 100;
+                input.step = option.step || 1;
+                input.value = option.default;
+
+                const valueDisplay = document.createElement('span');
+                valueDisplay.className = 'input-range-value';
+                valueDisplay.textContent = input.value;
+                label.appendChild(valueDisplay);
+
+                input.addEventListener('input', (e) => {
+                    valueDisplay.textContent = e.target.value;
+                    // Update overlay preview opacity in real-time if on overlay tool
+                    if (currentToolKey === 'overlay' && option.id === 'opacity') {
+                        const opacityValue = parseFloat(e.target.value);
+                        overlayPreviewImg.style.opacity = opacityValue;
+                    }
+                    debounce(handlePreviewUpdate, 150); // Live preview with debouncing
+                });
+                break;
+            case 'number':
+                input = document.createElement('input');
+                input.type = 'number';
+                input.id = option.id;
+                input.name = option.id;
+                input.min = option.min || 1;
+                if (option.hasOwnProperty('max')) input.max = option.max;
+                input.value = option.default;
+                input.addEventListener('input', () => {
+                    if (currentToolKey === 'subtitle') updateTextBoxContent();
+                    debounce(handlePreviewUpdate, 150);
+                });
+                break;
+            case 'text':
+                input = document.createElement('textarea');
+                input.id = option.id;
+                input.name = option.id;
+                input.value = option.default;
+                input.addEventListener('input', () => {
+                    if (currentToolKey === 'subtitle') updateTextBoxContent();
+                    debounce(handlePreviewUpdate, 150);
+                });
+                break;
+            case 'color':
+                input = document.createElement('input');
+                input.type = 'color';
+                input.id = option.id;
+                input.name = option.id;
+                input.value = option.default;
+                input.addEventListener('input', () => {
+                    if (currentToolKey === 'subtitle') updateTextBoxContent();
+                    debounce(handlePreviewUpdate, 150);
+                });
+                break;
+            case 'checkbox':
+                input = document.createElement('input');
+                input.type = 'checkbox';
+                input.id = option.id;
+                input.name = option.id;
+                input.checked = option.default;
+                input.addEventListener('change', handlePreviewUpdate);
+                break;
+            case 'select':
+                input = document.createElement('select');
+                input.id = option.id;
+                input.name = option.id;
+                option.choices.forEach(choice => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = choice.value;
+                    optionElement.textContent = choice.label;
+                    if (choice.value === option.default) {
+                        optionElement.selected = true;
+                    }
+                    input.appendChild(optionElement);
+                });
+                input.addEventListener('change', () => {
+                    if (currentToolKey === 'subtitle') updateTextBoxContent();
+                    handlePreviewUpdate();
+                }); // Change event for selects
+                break;
+            case 'button-group': // CASE for Preset Buttons
+                group.appendChild(label); // Keep the label for the group
+                const buttonGroupDiv = document.createElement('div');
+                buttonGroupDiv.className = 'button-group';
+
+                option.buttons.forEach(btnConfig => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'preset-btn';
+                    btn.textContent = btnConfig.label;
+                    btn.setAttribute('data-angle', btnConfig.value);
+
+                    btn.addEventListener('click', () => {
+                        // Find the main angle slider/input and its display span
+                        const angleInput = toolSettingsDiv.querySelector('#angle');
+                        const valueDisplay = toolSettingsDiv.querySelector('#angle').closest('.setting-group').querySelector('.input-range-value');
+                        const angleValue = parseInt(btn.getAttribute('data-angle'));
+
+                        if (angleInput) {
+                            angleInput.value = angleValue;
+                            // Update the visual display text (FIXED)
+                            if (valueDisplay) {
+                                valueDisplay.textContent = angleValue;
+                            }
+                            handlePreviewUpdate(); // Trigger the preview with the new angle
+                        }
+                    });
+                    buttonGroupDiv.appendChild(btn);
+                });
+                group.appendChild(buttonGroupDiv);
+                return group; // Return the entire group for button-group type
+            case 'aspect-ratio-group': // CASE for Aspect Ratio Preset Buttons
+                group.appendChild(label);
+                const aspectButtonGroupDiv = document.createElement('div');
+                aspectButtonGroupDiv.className = 'button-group';
+
+                option.buttons.forEach(btnConfig => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'preset-btn';
+                    btn.textContent = btnConfig.label;
+                    btn.setAttribute('data-aspect', btnConfig.value);
+
+                    btn.addEventListener('click', () => {
+                        // Remove active class from all buttons
+                        aspectButtonGroupDiv.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+
+                        // Update crop box aspect ratio
+                        if (btnConfig.value === 'free') {
+                            cropBoxState.aspectRatio = null;
+                            cropBoxState.lockedAspect = false;
+                        } else {
+                            const [w, h] = btnConfig.value.split(':').map(Number);
+                            cropBoxState.aspectRatio = w / h;
+                            cropBoxState.lockedAspect = true;
+
+                            // Calculate maximum crop box that fits the image with the desired aspect ratio
+                            const imgRect = previewImage.getBoundingClientRect();
+                            const previewRect = previewArea.getBoundingClientRect();
+                            const imgOffsetX = imgRect.left - previewRect.left;
+                            const imgOffsetY = imgRect.top - previewRect.top;
+
+                            const imageAspectRatio = imgRect.width / imgRect.height;
+                            const targetAspectRatio = cropBoxState.aspectRatio;
+
+                            let newWidth, newHeight;
+
+                            if (targetAspectRatio > imageAspectRatio) {
+                                // Crop is wider than image - fit to width
+                                newWidth = imgRect.width;
+                                newHeight = newWidth / targetAspectRatio;
+                            } else {
+                                // Crop is taller than image - fit to height
+                                newHeight = imgRect.height;
+                                newWidth = newHeight * targetAspectRatio;
+                            }
+
+                            // Center the crop box
+                            cropBoxState.width = newWidth;
+                            cropBoxState.height = newHeight;
+                            cropBoxState.x = imgOffsetX + (imgRect.width - newWidth) / 2;
+                            cropBoxState.y = imgOffsetY + (imgRect.height - newHeight) / 2;
+                        }
+
+                        updateCropBoxPosition();
+                        updateCropAspectDisplay();
+                    });
+
+                    // Set first button (Free) as active by default
+                    if (btnConfig.value === 'free') {
+                        btn.classList.add('active');
+                    }
+
+                    aspectButtonGroupDiv.appendChild(btn);
+                });
+                group.appendChild(aspectButtonGroupDiv);
+                return group;
+            case 'font-carousel':
+                group.appendChild(label);
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = option.id;
+                hiddenInput.name = option.id;
+                hiddenInput.value = option.default;
+                group.appendChild(hiddenInput);
+
+                const carouselContainer = document.createElement('div');
+                carouselContainer.className = 'font-carousel-container';
+                const carousel = document.createElement('div');
+                carousel.className = 'font-carousel';
+
+                option.fonts.forEach(font => {
+                    const fontOption = document.createElement('div');
+                    fontOption.className = 'font-option';
+                    if (font.value === option.default) {
+                        fontOption.classList.add('selected');
+                    }
+                    fontOption.setAttribute('data-font-value', font.value);
+
+                    const previewBox = document.createElement('div');
+                    previewBox.className = 'font-preview-box';
+                    const previewImg = document.createElement('img');
+                    previewImg.src = `/media/font_previews/${font.value}.png`;
+                    previewImg.alt = font.label;
+                    previewImg.onerror = function () {
+                        this.style.display = 'none';
+                        const fallbackText = document.createElement('div');
+                        fallbackText.textContent = 'Aa';
+                        fallbackText.style.fontSize = '32px';
+                        fallbackText.style.fontWeight = 'bold';
+                        fallbackText.style.color = '#333';
+                        previewBox.appendChild(fallbackText);
+                    };
+                    previewBox.appendChild(previewImg);
+
+                    const fontLabel = document.createElement('div');
+                    fontLabel.className = 'font-label';
+                    fontLabel.textContent = font.label;
+
+                    fontOption.appendChild(previewBox);
+                    fontOption.appendChild(fontLabel);
+                    fontOption.addEventListener('click', () => {
+                        carousel.querySelectorAll('.font-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        fontOption.classList.add('selected');
+                        hiddenInput.value = font.value;
+                        if (currentToolKey === 'subtitle') updateTextBoxContent();
+                        handlePreviewUpdate();
+                    });
+                    carousel.appendChild(fontOption);
+                });
+
+                carouselContainer.appendChild(carousel);
+                group.appendChild(carouselContainer);
+                return group;
+            case 'file':
+                group.appendChild(label);
+                const fileContainer = document.createElement('div');
+                fileContainer.className = 'file-upload-container';
+
+                const fileLabel = document.createElement('label');
+                fileLabel.className = 'file-upload-button';
+                fileLabel.textContent = 'Choose PNG File';
+
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.id = option.id;
+                fileInput.name = option.id;
+                fileInput.className = 'file-upload-input';
+                if (option.accept) {
+                    fileInput.accept = option.accept;
+                }
+
+                const fileStatus = document.createElement('span');
+                fileStatus.className = 'file-upload-status';
+                fileStatus.textContent = 'No file selected';
+
+                fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Reset input value to allow re-uploading the same file
+                        fileInput.value = '';
+
+                        // Validate PNG
+                        if (!file.name.toLowerCase().endsWith('.png')) {
+                            fileStatus.textContent = 'Error: Only PNG files are supported';
+                            fileStatus.className = 'file-upload-status error';
+                            return;
+                        }
+
+                        fileStatus.textContent = 'Uploading...';
+                        fileStatus.className = 'file-upload-status';
+
+                        // Upload to server
+                        const formData = new FormData();
+                        formData.append('overlay_file', file);
+
+                        fetch('/api/upload/overlay/', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-CSRFToken': csrftoken
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                fileStatus.textContent = `Loaded: ${file.name} (${data.width}x${data.height})`;
+                                fileStatus.className = 'file-upload-status success';
+
+                                // Store overlay info in state
+                                overlayBoxState.overlayPath = data.overlay_path;
+                                overlayBoxState.overlayOriginalWidth = data.width;
+                                overlayBoxState.overlayOriginalHeight = data.height;
+                                overlayBoxState.aspectRatio = data.width / data.height;
+
+                                // Update hidden input
+                                const overlayPathInput = toolSettingsDiv.querySelector('#overlay_path');
+                                if (overlayPathInput) {
+                                    overlayPathInput.value = data.overlay_path;
+                                }
+
+                                // Initialize overlay box
+                                if (currentToolKey === 'overlay') {
+                                    initializeOverlayBox(data.overlay_url);
+                                }
+                            } else {
+                                fileStatus.textContent = `Error: ${data.error}`;
+                                fileStatus.className = 'file-upload-status error';
+                            }
+                        })
+                        .catch(error => {
+                            fileStatus.textContent = `Error: ${error.message}`;
+                            fileStatus.className = 'file-upload-status error';
+                        });
+                    }
+                });
+
+                fileLabel.appendChild(fileInput);
+                fileContainer.appendChild(fileLabel);
+                fileContainer.appendChild(fileStatus);
+                group.appendChild(fileContainer);
+                return group;
+            case 'opacity-button-group':
+                group.appendChild(label);
+                const opacityButtonGroupDiv = document.createElement('div');
+                opacityButtonGroupDiv.className = 'button-group';
+
+                option.buttons.forEach(btnConfig => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'preset-btn';
+                    btn.textContent = btnConfig.label;
+                    btn.setAttribute('data-opacity', btnConfig.value);
+
+                    btn.addEventListener('click', () => {
+                        const opacityInput = toolSettingsDiv.querySelector('#opacity');
+                        const valueDisplay = opacityInput ? opacityInput.closest('.setting-group').querySelector('.input-range-value') : null;
+                        const opacityValue = parseFloat(btn.getAttribute('data-opacity'));
+
+                        if (opacityInput) {
+                            opacityInput.value = opacityValue;
+                            if (valueDisplay) {
+                                valueDisplay.textContent = opacityValue.toFixed(2);
+                            }
+                            // Update overlay preview opacity visually
+                            overlayPreviewImg.style.opacity = opacityValue;
+                            // Enable apply button for overlay tool
+                            if (currentToolKey === 'overlay' && overlayBoxState.overlayPath) {
+                                applyButton.disabled = false;
+                            }
+                            handlePreviewUpdate();
+                        }
+                    });
+                    opacityButtonGroupDiv.appendChild(btn);
+                });
+                group.appendChild(opacityButtonGroupDiv);
+                return group;
+            case 'position-button-group':
+                group.appendChild(label);
+                const positionButtonGroupDiv = document.createElement('div');
+                positionButtonGroupDiv.className = 'button-group';
+
+                option.buttons.forEach(btnConfig => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'preset-btn';
+                    btn.textContent = btnConfig.label;
+                    btn.setAttribute('data-position', btnConfig.value);
+
+                    btn.addEventListener('click', () => {
+                        if (currentToolKey === 'overlay' && overlayBoxState.overlayPath) {
+                            positionOverlayBox(btnConfig.value);
+                        }
+                    });
+                    positionButtonGroupDiv.appendChild(btn);
+                });
+                group.appendChild(positionButtonGroupDiv);
+                return group;
+            case 'hidden':
+                input = document.createElement('input');
+                input.type = 'hidden';
+                input.id = option.id;
+                input.name = option.id;
+                input.value = option.default || '';
+                group.appendChild(input);
+                return group;
+            default:
+                return null;
+        }
+
+        group.appendChild(label);
+        group.appendChild(input);
+        return group;
+    }
+
+    // NEW: Function to find an option by ID and update its default value
+    function updateToolDefault(toolKey, optionId, newValue) {
+        const toolConfig = EDITOR_TOOLS[toolKey];
+        if (!toolConfig) return;
+
+        const option = toolConfig.options.find(opt => opt.id === optionId);
+        if (option) {
+            option.default = newValue;
+        }
+    }
+
+    // --- Core Logic ---
+
+    function renderSettings(toolKey) {
+        currentToolKey = toolKey;
+
+        if (textBoxOverlay) textBoxOverlay.classList.remove('active');
+        if (cropBoxOverlay) cropBoxOverlay.classList.remove('active');
+        if (overlayBoxOverlay) overlayBoxOverlay.classList.remove('active');
+
+        // Show/hide text box overlay for subtitle tool
+        if (toolKey === 'subtitle') {
+            textBoxOverlay.classList.add('active');
+            // Initialize text box every time subtitle tool is selected
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    initializeTextBox();
+                });
+            });
+        } else {
+            textBoxOverlay.classList.remove('active');
+        }
+
+        // Show/hide crop box overlay for crop tool
+        if (toolKey === 'crop') {
+            // DON'T show crop box yet - let initializeCropBox show it after calculating dimensions
+            // Initialize crop box every time crop tool is selected
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    initializeCropBox();
+                });
+            });
+        } else {
+            cropBoxOverlay.classList.remove('active');
+        }
+
+        // Show/hide overlay box for overlay tool
+        if (toolKey === 'overlay') {
+            // Don't show overlay box until user uploads a file
+            // It will be shown in initializeOverlayBox()
+        } else {
+            overlayBoxOverlay.classList.remove('active');
+        }
+
+        // 1. DYNAMIC DEFAULT UPDATE
+        if (toolKey === 'resize' && currentImageWidth > 0 && currentImageHeight > 0) {
+            // Set defaults to current dimensions (ensures a neutral state)
+            updateToolDefault('resize', 'width', currentImageWidth);
+            updateToolDefault('resize', 'height', currentImageHeight);
+        }
+
+        // 2. Clear and Render
+        toolSettingsDiv.innerHTML = '';
+
+        const toolConfig = EDITOR_TOOLS[toolKey];
+        settingsTitle.textContent = toolConfig.name + " Settings";
+
+        let filterSelect = null;
+
+        toolConfig.options.forEach(option => {
+            // The createSettingInput function now uses the potentially updated 'option.default' value
+            const inputGroup = createSettingInput(option);
+            if (inputGroup) {
+                toolSettingsDiv.appendChild(inputGroup);
+
+                if (option.id === 'filter' && option.type === 'select') {
+                    filterSelect = inputGroup.querySelector('select');
+                }
+            }
+        });
+
+        if (filterSelect) {
+            updateDynamicSettings(filterSelect.value);
+            filterSelect.addEventListener('change', (e) => {
+                updateDynamicSettings(e.target.value);
+            });
+        }
+
+        // Initialize text box content for subtitle tool after all inputs are created
+        if (toolKey === 'subtitle') {
+            updateTextBoxContent();
+        }
+
+        // Trigger an immediate preview update when tool settings are rendered/selected
+        handlePreviewUpdate();
+    }
+
+    function updateDynamicSettings(currentFilterValue) {
+        const dynamicSettings = toolSettingsDiv.querySelectorAll('.setting-group[data-applies-to]');
+
+        dynamicSettings.forEach(group => {
+            const appliesTo = group.getAttribute('data-applies-to').split(',');
+            const shouldShow = appliesTo.includes(currentFilterValue);
+            group.style.display = shouldShow ? 'block' : 'none';
+
+            if (shouldShow && group.querySelector('input[type="range"]')) {
+                const rangeInput = group.querySelector('input[type="range"]');
+                const valueDisplay = group.querySelector('.input-range-value');
+                if (valueDisplay) {
+                    valueDisplay.textContent = rangeInput.value;
+                }
+            }
+        });
+
+        // Trigger preview update whenever dynamic settings change visibility/state
+        handlePreviewUpdate();
+    }
+
+    // --- Text Box Drag and Resize Functionality ---
+
+    function initializeTextBox() {
+        // Wait for image to be properly rendered before initializing
+        const initializeWhenReady = () => {
+             const activeImg = getActivePreviewImage();
+             // Get the visible preview image dimensions
+             const imgRect = activeImg.getBoundingClientRect();
+             const previewRect = previewArea.getBoundingClientRect();
+
+             // Check if image has proper dimensions (not loading state)
+             if (imgRect.width === 0 || imgRect.height === 0) {
+                 // Image not ready yet, wait a bit
+                 requestAnimationFrame(initializeWhenReady);
+                 return;
+             }
+
+             // Calculate position relative to preview area
+             const imgOffsetX = imgRect.left - previewRect.left;
+             const imgOffsetY = imgRect.top - previewRect.top;
+
+             // Default: center of image (changed from bottom position)
+             const defaultWidth = Math.min(300, imgRect.width * 0.6);
+             const defaultHeight = Math.min(100, imgRect.height * 0.15);
+             const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
+             const defaultY = imgOffsetY + (imgRect.height - defaultHeight) / 2;  // Center vertically
+
+             textBoxState = {
+                 x: defaultX,
+                 y: defaultY,
+                 width: defaultWidth,
+                 height: defaultHeight
+             };
+
+             updateTextBoxPosition();
+        };
+
+        // Start initialization with animation frame delay
+        requestAnimationFrame(() => {
+            requestAnimationFrame(initializeWhenReady);
+        });
+    }
+
+    function updateTextBoxPosition() {
+        const activeImg = getActivePreviewImage();
+        // Get image boundaries
+        const imgRect = activeImg.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Constrain text box to stay within image boundaries
+        const minX = imgOffsetX;
+        const minY = imgOffsetY;
+        const maxX = imgOffsetX + imgRect.width - textBoxState.width;
+        const maxY = imgOffsetY + imgRect.height - textBoxState.height;
+
+        // Apply constraints
+        textBoxState.x = Math.max(minX, Math.min(maxX, textBoxState.x));
+        textBoxState.y = Math.max(minY, Math.min(maxY, textBoxState.y));
+
+        // Update DOM
+        textBoxOverlay.style.left = textBoxState.x + 'px';
+        textBoxOverlay.style.top = textBoxState.y + 'px';
+        textBoxOverlay.style.width = textBoxState.width + 'px';
+        textBoxOverlay.style.height = textBoxState.height + 'px';
+    }
+
+
+    // Drag functionality
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let boxStartX = 0;
+    let boxStartY = 0;
+
+    textBoxOverlay.addEventListener('mousedown', (e) => {
+        // Only drag if not clicking on resize handles
+        if (e.target.classList.contains('resize-handle')) return;
+
+        isDragging = true;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        boxStartX = textBoxState.x;
+        boxStartY = textBoxState.y;
+
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+
+        const deltaX = e.clientX - dragStartX;
+        const deltaY = e.clientY - dragStartY;
+
+        textBoxState.x = boxStartX + deltaX;
+        textBoxState.y = boxStartY + deltaY;
+
+        updateTextBoxPosition();
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+        }
+        if (isResizing) {
+            isResizing = false;
+            currentResizeHandle = null;
+        }
+    });
+
+    // Resize functionality
+    let isResizing = false;
+    let currentResizeHandle = null;
+    let resizeStartX = 0;
+    let resizeStartY = 0;
+    let boxStartWidth = 0;
+    let boxStartHeight = 0;
+
+    document.querySelectorAll('.resize-handle').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            currentResizeHandle = handle.dataset.direction;
+            resizeStartX = e.clientX;
+            resizeStartY = e.clientY;
+            boxStartX = textBoxState.x;
+            boxStartY = textBoxState.y;
+            boxStartWidth = textBoxState.width;
+            boxStartHeight = textBoxState.height;
+
+            e.stopPropagation();
+            e.preventDefault();
+        });
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+
+        const deltaX = e.clientX - resizeStartX;
+        const deltaY = e.clientY - resizeStartY;
+
+        switch (currentResizeHandle) {
+            case 'se': // Bottom-right
+                textBoxState.width = Math.max(100, boxStartWidth + deltaX);
+                textBoxState.height = Math.max(50, boxStartHeight + deltaY);
+                break;
+            case 'sw': // Bottom-left
+                textBoxState.width = Math.max(100, boxStartWidth - deltaX);
+                textBoxState.height = Math.max(50, boxStartHeight + deltaY);
+                textBoxState.x = boxStartX + (boxStartWidth - textBoxState.width);
+                break;
+            case 'ne': // Top-right
+                textBoxState.width = Math.max(100, boxStartWidth + deltaX);
+                textBoxState.height = Math.max(50, boxStartHeight - deltaY);
+                textBoxState.y = boxStartY + (boxStartHeight - textBoxState.height);
+                break;
+            case 'nw': // Top-left
+                textBoxState.width = Math.max(100, boxStartWidth - deltaX);
+                textBoxState.height = Math.max(50, boxStartHeight - deltaY);
+                textBoxState.x = boxStartX + (boxStartWidth - textBoxState.width);
+                textBoxState.y = boxStartY + (boxStartHeight - textBoxState.height);
+                break;
+        }
+
+        updateTextBoxPosition();
+    });
+
+    // Update text box content when text input changes
+    // Wrap text exactly like the backend does (split by spaces, measure width)
+    function wrapTextLikeBackend(text, maxWidth, fontSize, fontFamily) {
+        if (!text) return [''];
+
+        // Create a temporary canvas to measure text width
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.font = `${fontSize}px ${fontFamily}`;
+
+        const words = text.split(/\s+/);
+        if (words.length === 0) return [''];
+
+        const lines = [];
+        let line = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            const testLine = line + ' ' + words[i];
+            const metrics = ctx.measureText(testLine);
+
+            if (metrics.width <= maxWidth) {
+                line = testLine;
+            } else {
+                lines.push(line);
+                line = words[i];
+            }
+        }
+        lines.push(line);
+        return lines;
+    }
+
+    // Update text box content when text input changes
+    function updateTextBoxContent() {
+        const textInput = document.getElementById('text');
+        if (textInput && textBoxOverlay.classList.contains('active')) {
+            const text = textInput.value || 'Your text here';
+
+            // Get all styling inputs
+            const fontSizeInput = document.getElementById('font_size');
+            const fontColorInput = document.getElementById('font_color');
+            const strokeWidthInput = document.getElementById('stroke_width');
+            const rectInput = document.getElementById('rect');
+            const fontNameInput = document.querySelector('input[name="font_name"]');
+
+            // Get font settings
+            let fontFamily = 'Arial, sans-serif';
+            if (fontNameInput) {
+                const fontName = fontNameInput.value;
+                const fontMap = {
+                    'arial': 'Arial, sans-serif',
+                    'times': 'Times New Roman, serif',
+                    'georgia': 'Georgia, serif',
+                    'courier': 'Courier New, monospace',
+                    'verdana': 'Verdana, sans-serif',
+                    'tahoma': 'Tahoma, sans-serif',
+                    'trebuchet': 'Trebuchet MS, sans-serif',
+                    'impact': 'Impact, sans-serif',
+                    'comic_sans': 'Comic Sans MS, cursive'
+                };
+                fontFamily = fontMap[fontName] || 'Arial, sans-serif';
+                textBoxContent.style.fontFamily = fontFamily;
+            }
+
+            // Get font size
+            const fontSize = fontSizeInput ? (parseInt(fontSizeInput.value) || 32) : 32;
+            textBoxContent.style.fontSize = fontSize + 'px';
+
+            // Calculate available width for text (account for padding)
+            const availableWidth = textBoxState.width - 20; // 10px padding on each side
+
+            // Wrap text exactly like backend does
+            const wrappedLines = wrapTextLikeBackend(text, availableWidth, fontSize, fontFamily);
+            textBoxContent.textContent = wrappedLines.join('\n');
+
+            // Update font color
+            if (fontColorInput) {
+                textBoxContent.style.color = fontColorInput.value;
+            }
+
+            // Text is always centered in the draggable box
+            textBoxContent.style.textAlign = 'center';
+
+            // Update text stroke
+            if (strokeWidthInput) {
+                const strokeWidth = parseInt(strokeWidthInput.value) || 0;
+                if (strokeWidth > 0) {
+                    textBoxContent.style.webkitTextStroke = `${strokeWidth}px black`;
+                    textBoxContent.style.textShadow = 'none';
+                } else {
+                    textBoxContent.style.webkitTextStroke = 'none';
+                    textBoxContent.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.8)';
+                }
+            }
+
+            // Update background box
+            if (rectInput && rectInput.checked) {
+                textBoxOverlay.style.background = 'rgba(0, 0, 0, 0.6)';
+            } else {
+                textBoxOverlay.style.background = 'rgba(0, 123, 255, 0.1)';
+            }
+        }
+    }
+
+    // --- Overlay Box Initialization and Positioning ---
+
+    function initializeOverlayBox(overlayUrl) {
+        if (!overlayUrl) return;
+
+        // Wait for overlay image to load first
+        overlayPreviewImg.onload = () => {
+            // Now wait for both images to be properly rendered
+            const initializeWhenReady = () => {
+                const activeImg = getActivePreviewImage();
+                // Get the visible preview image dimensions
+                const imgRect = activeImg.getBoundingClientRect();
+                const previewRect = previewArea.getBoundingClientRect();
+
+                // Check if image has proper dimensions (not loading state)
+                if (imgRect.width === 0 || imgRect.height === 0) {
+                    // Image not ready yet, wait a bit
+                    requestAnimationFrame(initializeWhenReady);
+                    return;
+                }
+
+                // Verify we have valid overlay dimensions
+                if (!overlayBoxState.overlayOriginalWidth || !overlayBoxState.overlayOriginalHeight) {
+                    console.error('Overlay dimensions not set');
+                    return;
+                }
+
+                // Calculate position relative to preview area
+                const imgOffsetX = imgRect.left - previewRect.left;
+                const imgOffsetY = imgRect.top - previewRect.top;
+
+                // Default: scale overlay to 30% of image width, center it
+                const maxWidth = imgRect.width * 0.3;
+                const scale = maxWidth / overlayBoxState.overlayOriginalWidth;
+                const scaledWidth = overlayBoxState.overlayOriginalWidth * scale;
+                const scaledHeight = overlayBoxState.overlayOriginalHeight * scale;
+                const defaultX = imgOffsetX + (imgRect.width - scaledWidth) / 2;
+                const defaultY = imgOffsetY + (imgRect.height - scaledHeight) / 2;
+
+                // IMPORTANT: Completely replace overlayBoxState like crop tool does
+                // This prevents stale values from causing the 20x20 bug
+                const currentOverlayPath = overlayBoxState.overlayPath;
+                const currentOriginalWidth = overlayBoxState.overlayOriginalWidth;
+                const currentOriginalHeight = overlayBoxState.overlayOriginalHeight;
+                const currentAspectRatio = overlayBoxState.aspectRatio;
+
+                overlayBoxState = {
+                    x: defaultX,
+                    y: defaultY,
+                    width: scaledWidth,
+                    height: scaledHeight,
+                    scale: scale,
+                    overlayPath: currentOverlayPath,
+                    overlayOriginalWidth: currentOriginalWidth,
+                    overlayOriginalHeight: currentOriginalHeight,
+                    aspectRatio: currentAspectRatio
+                };
+
+                updateOverlayBoxPosition();
+                overlayBoxOverlay.classList.add('active');
+
+                // Reset opacity visual to match default (1.0)
+                overlayPreviewImg.style.opacity = '1.0';
+            };
+
+            // Start initialization with animation frame after image loads
+            requestAnimationFrame(() => {
+                requestAnimationFrame(initializeWhenReady);
+            });
+        };
+
+        // Set overlay image source - this triggers onload
+        overlayPreviewImg.src = overlayUrl;
+    }
+
+    function positionOverlayBox(position) {
+        if (!overlayBoxState.overlayPath) return;
+
+        const activeImg = getActivePreviewImage();
+        const imgRect = activeImg.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        const margin = 20;
+
+        switch(position) {
+            case 'center':
+                overlayBoxState.x = imgOffsetX + (imgRect.width - overlayBoxState.width) / 2;
+                overlayBoxState.y = imgOffsetY + (imgRect.height - overlayBoxState.height) / 2;
+                break;
+            case 'top-left':
+                overlayBoxState.x = imgOffsetX + margin;
+                overlayBoxState.y = imgOffsetY + margin;
+                break;
+            case 'top-right':
+                overlayBoxState.x = imgOffsetX + imgRect.width - overlayBoxState.width - margin;
+                overlayBoxState.y = imgOffsetY + margin;
+                break;
+            case 'bottom-left':
+                overlayBoxState.x = imgOffsetX + margin;
+                overlayBoxState.y = imgOffsetY + imgRect.height - overlayBoxState.height - margin;
+                break;
+            case 'bottom-right':
+                overlayBoxState.x = imgOffsetX + imgRect.width - overlayBoxState.width - margin;
+                overlayBoxState.y = imgOffsetY + imgRect.height - overlayBoxState.height - margin;
+                break;
+        }
+
+        updateOverlayBoxPosition();
+    }
+
+    function updateOverlayBoxPosition() {
+        const activeImg = getActivePreviewImage();
+        // Get image boundaries
+        const imgRect = activeImg.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Calculate minimum size as 10% of original overlay dimensions
+        const minScale = 0.1;
+        const minWidth = overlayBoxState.overlayOriginalWidth * minScale;
+        const minHeight = overlayBoxState.overlayOriginalHeight * minScale;
+
+        // Ensure minimum and maximum size first (minimum is 10% of original, max is image size)
+        overlayBoxState.width = Math.max(minWidth, Math.min(imgRect.width, overlayBoxState.width));
+        overlayBoxState.height = Math.max(minHeight, Math.min(imgRect.height, overlayBoxState.height));
+
+        // Recalculate scale based on constrained width
+        overlayBoxState.scale = overlayBoxState.width / overlayBoxState.overlayOriginalWidth;
+
+        // Then constrain overlay box to stay within image boundaries
+        const minX = imgOffsetX;
+        const minY = imgOffsetY;
+        const maxX = imgOffsetX + imgRect.width - overlayBoxState.width;
+        const maxY = imgOffsetY + imgRect.height - overlayBoxState.height;
+
+        // Apply constraints (clamp to valid range, prevent negative values)
+        overlayBoxState.x = Math.max(minX, Math.min(maxX, overlayBoxState.x));
+        overlayBoxState.y = Math.max(minY, Math.min(maxY, overlayBoxState.y));
+
+        // Update DOM
+        overlayBoxOverlay.style.left = overlayBoxState.x + 'px';
+        overlayBoxOverlay.style.top = overlayBoxState.y + 'px';
+        overlayBoxOverlay.style.width = overlayBoxState.width + 'px';
+        overlayBoxOverlay.style.height = overlayBoxState.height + 'px';
+
+        // Update dimensions display
+        updateOverlayDimensionsDisplay();
+    }
+
+    function updateOverlayDimensionsDisplay() {
+        const actualWidth = Math.round(overlayBoxState.overlayOriginalWidth * overlayBoxState.scale);
+        const actualHeight = Math.round(overlayBoxState.overlayOriginalHeight * overlayBoxState.scale);
+        overlayDimensionsDisplay.textContent = `${actualWidth}x${actualHeight}`;
+    }
+
+    // --- Crop Box Drag and Resize Functionality ---
+
+    function initializeCropBox() {
+        // Wait for image to be properly rendered before initializing
+        const initializeWhenReady = () => {
+            const activeImg = getActivePreviewImage();
+            // Get the visible preview image dimensions
+            const imgRect = activeImg.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+
+            // Check if image has proper dimensions (not loading state)
+            if (imgRect.width === 0 || imgRect.height === 0) {
+                // Image not ready yet, wait a bit
+                requestAnimationFrame(initializeWhenReady);
+                return;
+            }
+
+            // Calculate position relative to preview area
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            // Default: center 80% of image
+            const defaultWidth = imgRect.width * 0.8;
+            const defaultHeight = imgRect.height * 0.8;
+            const defaultX = imgOffsetX + (imgRect.width - defaultWidth) / 2;
+            const defaultY = imgOffsetY + (imgRect.height - defaultHeight) / 2;
+
+            cropBoxState = {
+                x: defaultX,
+                y: defaultY,
+                width: defaultWidth,
+                height: defaultHeight,
+                aspectRatio: null,
+                lockedAspect: false
+            };
+
+            updateCropBoxPosition();
+            updateCropAspectDisplay();
+
+            // NOW show the crop box after initialization is complete
+            if (currentToolKey === 'crop') {
+                cropBoxOverlay.classList.add('active');
+            }
+        };
+
+        // Start initialization with animation frame delay
+        requestAnimationFrame(() => {
+            requestAnimationFrame(initializeWhenReady);
+        });
+    }
+
+    function updateCropBoxPosition() {
+        const activeImg = getActivePreviewImage();
+        // Get image boundaries
+        const imgRect = activeImg.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Constrain crop box to stay within image boundaries
+        const minX = imgOffsetX;
+        const minY = imgOffsetY;
+        const maxX = imgOffsetX + imgRect.width - cropBoxState.width;
+        const maxY = imgOffsetY + imgRect.height - cropBoxState.height;
+
+        // Apply constraints
+        cropBoxState.x = Math.max(minX, Math.min(maxX, cropBoxState.x));
+        cropBoxState.y = Math.max(minY, Math.min(maxY, cropBoxState.y));
+
+        // Ensure minimum size
+        cropBoxState.width = Math.max(50, Math.min(imgRect.width, cropBoxState.width));
+        cropBoxState.height = Math.max(50, Math.min(imgRect.height, cropBoxState.height));
+
+        // Update DOM
+        cropBoxOverlay.style.left = cropBoxState.x + 'px';
+        cropBoxOverlay.style.top = cropBoxState.y + 'px';
+        cropBoxOverlay.style.width = cropBoxState.width + 'px';
+        cropBoxOverlay.style.height = cropBoxState.height + 'px';
+    }
+
+    function updateCropAspectDisplay() {
+        const activeImg = getActivePreviewImage();
+        // Get image boundaries to calculate actual pixel dimensions
+        const imgRect = activeImg.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Convert crop box position to image coordinates
+        const relX = cropBoxState.x - imgOffsetX;
+        const relY = cropBoxState.y - imgOffsetY;
+
+        // Calculate as percentage of image dimensions
+        const xPercent = relX / imgRect.width;
+        const yPercent = relY / imgRect.height;
+        const widthPercent = cropBoxState.width / imgRect.width;
+        const heightPercent = cropBoxState.height / imgRect.height;
+
+        // Calculate actual pixel dimensions
+        const actualWidth = Math.round(widthPercent * currentImageWidth);
+        const actualHeight = Math.round(heightPercent * currentImageHeight);
+
+        // Update dimensions display
+        cropDimensionsDisplay.textContent = `${actualWidth}x${actualHeight}`;
+
+        // Calculate and display aspect ratio
+        const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+        const divisor = gcd(actualWidth, actualHeight);
+        const ratioW = actualWidth / divisor;
+        const ratioH = actualHeight / divisor;
+
+        // Simplify common ratios for display
+        if (Math.abs(ratioW / ratioH - 16 / 9) < 0.01) {
+            cropAspectDisplay.textContent = '16:9';
+        } else if (Math.abs(ratioW / ratioH - 4 / 3) < 0.01) {
+            cropAspectDisplay.textContent = '4:3';
+        } else if (Math.abs(ratioW / ratioH - 1) < 0.01) {
+            cropAspectDisplay.textContent = '1:1';
+        } else if (Math.abs(ratioW / ratioH - 3 / 2) < 0.01) {
+            cropAspectDisplay.textContent = '3:2';
+        } else if (Math.abs(ratioW / ratioH - 2 / 3) < 0.01) {
+            cropAspectDisplay.textContent = '2:3';
+        } else if (Math.abs(ratioW / ratioH - 9 / 16) < 0.01) {
+            cropAspectDisplay.textContent = '9:16';
+        } else if (ratioW < 100 && ratioH < 100) {
+            cropAspectDisplay.textContent = `${ratioW}:${ratioH}`;
+        } else {
+            cropAspectDisplay.textContent = `${(ratioW / ratioH).toFixed(2)}:1`;
+        }
+    }
+
+    // Crop box drag functionality
+    let isCropDragging = false;
+    let cropDragStartX = 0;
+    let cropDragStartY = 0;
+    let cropBoxStartX = 0;
+    let cropBoxStartY = 0;
+
+    cropBoxOverlay.addEventListener('mousedown', (e) => {
+        // Only drag if not clicking on resize handles or grid
+        if (e.target.classList.contains('resize-handle') || e.target.classList.contains('crop-grid-line')) return;
+        if (e.target !== cropBoxOverlay && e.target.parentElement !== cropBoxOverlay) return;
+
+        isCropDragging = true;
+        cropDragStartX = e.clientX;
+        cropDragStartY = e.clientY;
+        cropBoxStartX = cropBoxState.x;
+        cropBoxStartY = cropBoxState.y;
+
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isCropDragging) {
+            const deltaX = e.clientX - cropDragStartX;
+            const deltaY = e.clientY - cropDragStartY;
+
+            cropBoxState.x = cropBoxStartX + deltaX;
+            cropBoxState.y = cropBoxStartY + deltaY;
+
+            updateCropBoxPosition();
+            updateCropAspectDisplay();
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isCropDragging) {
+            isCropDragging = false;
+        }
+        if (isCropResizing) {
+            isCropResizing = false;
+            currentCropResizeHandle = null;
+        }
+    });
+
+    // Crop box resize functionality
+    let isCropResizing = false;
+    let currentCropResizeHandle = null;
+    let cropResizeStartX = 0;
+    let cropResizeStartY = 0;
+    let cropBoxStartWidth = 0;
+    let cropBoxStartHeight = 0;
+
+    // Add event listeners to crop box resize handles
+    function attachCropResizeHandlers() {
+        const cropHandles = cropBoxOverlay.querySelectorAll('.resize-handle');
+        cropHandles.forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                isCropResizing = true;
+                currentCropResizeHandle = handle.dataset.direction;
+                cropResizeStartX = e.clientX;
+                cropResizeStartY = e.clientY;
+                cropBoxStartX = cropBoxState.x;
+                cropBoxStartY = cropBoxState.y;
+                cropBoxStartWidth = cropBoxState.width;
+                cropBoxStartHeight = cropBoxState.height;
+
+                e.stopPropagation();
+                e.preventDefault();
+            });
+        });
+    }
+
+    // Call this after DOM is ready
+    attachCropResizeHandlers();
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isCropResizing) return;
+
+        const deltaX = e.clientX - cropResizeStartX;
+        const deltaY = e.clientY - cropResizeStartY;
+
+        let newWidth = cropBoxStartWidth;
+        let newHeight = cropBoxStartHeight;
+        let newX = cropBoxStartX;
+        let newY = cropBoxStartY;
+
+        switch (currentCropResizeHandle) {
+            case 'se': // Bottom-right
+                newWidth = cropBoxStartWidth + deltaX;
+                newHeight = cropBoxStartHeight + deltaY;
+                break;
+            case 'sw': // Bottom-left
+                newWidth = cropBoxStartWidth - deltaX;
+                newHeight = cropBoxStartHeight + deltaY;
+                newX = cropBoxStartX + deltaX;
+                break;
+            case 'ne': // Top-right
+                newWidth = cropBoxStartWidth + deltaX;
+                newHeight = cropBoxStartHeight - deltaY;
+                newY = cropBoxStartY + deltaY;
+                break;
+            case 'nw': // Top-left
+                newWidth = cropBoxStartWidth - deltaX;
+                newHeight = cropBoxStartHeight - deltaY;
+                newX = cropBoxStartX + deltaX;
+                newY = cropBoxStartY + deltaY;
+                break;
+        }
+
+        // Apply aspect ratio lock if enabled
+        if (cropBoxState.lockedAspect && cropBoxState.aspectRatio) {
+            // Maintain aspect ratio by adjusting based on which dimension changed more
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // Width changed more, adjust height
+                newHeight = newWidth / cropBoxState.aspectRatio;
+
+                // Adjust Y position for top handles
+                if (currentCropResizeHandle === 'ne' || currentCropResizeHandle === 'nw') {
+                    newY = cropBoxStartY + cropBoxStartHeight - newHeight;
+                }
+            } else {
+                // Height changed more, adjust width
+                newWidth = newHeight * cropBoxState.aspectRatio;
+
+                // Adjust X position for left handles
+                if (currentCropResizeHandle === 'sw' || currentCropResizeHandle === 'nw') {
+                    newX = cropBoxStartX + cropBoxStartWidth - newWidth;
+                }
+            }
+
+            // Apply LARGER minimum size for locked aspect ratio to prevent too small crops
+            const minSize = 100; // Minimum dimension in pixels
+            if (cropBoxState.aspectRatio > 1) {
+                // Wider than tall - width is the longer dimension
+                newWidth = Math.max(minSize, newWidth);
+                newHeight = newWidth / cropBoxState.aspectRatio;
+            } else {
+                // Taller than wide - height is the longer dimension
+                newHeight = Math.max(minSize, newHeight);
+                newWidth = newHeight * cropBoxState.aspectRatio;
+            }
+        } else {
+            // Apply standard minimum size for free crop
+            newWidth = Math.max(50, newWidth);
+            newHeight = Math.max(50, newHeight);
+        }
+
+        // Get image boundaries to constrain crop box
+        const activeImg = getActivePreviewImage();
+        const imgRect = activeImg.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Constrain dimensions to not exceed image bounds
+        const maxWidth = imgRect.width;
+        const maxHeight = imgRect.height;
+
+        // If aspect ratio is locked and size exceeds bounds, scale down proportionally
+        if (cropBoxState.lockedAspect && cropBoxState.aspectRatio) {
+            if (newWidth > maxWidth) {
+                newWidth = maxWidth;
+                newHeight = newWidth / cropBoxState.aspectRatio;
+            }
+            if (newHeight > maxHeight) {
+                newHeight = maxHeight;
+                newWidth = newHeight * cropBoxState.aspectRatio;
+            }
+        } else {
+            newWidth = Math.min(newWidth, maxWidth);
+            newHeight = Math.min(newHeight, maxHeight);
+        }
+
+        // Constrain position to keep crop box within image
+        newX = Math.max(imgOffsetX, Math.min(newX, imgOffsetX + imgRect.width - newWidth));
+        newY = Math.max(imgOffsetY, Math.min(newY, imgOffsetY + imgRect.height - newHeight));
+
+        cropBoxState.width = newWidth;
+        cropBoxState.height = newHeight;
+        cropBoxState.x = newX;
+        cropBoxState.y = newY;
+
+        updateCropBoxPosition();
+        updateCropAspectDisplay();
+    });
+
+    // --- Overlay Box Drag and Resize Functionality ---
+
+    // Overlay box drag functionality
+    let isOverlayDragging = false;
+    let overlayDragStartX = 0;
+    let overlayDragStartY = 0;
+    let overlayBoxStartX = 0;
+    let overlayBoxStartY = 0;
+
+    overlayBoxOverlay.addEventListener('mousedown', (e) => {
+        // Only drag if not clicking on resize handles
+        if (e.target.classList.contains('resize-handle')) return;
+
+        // Allow dragging when clicking anywhere on the overlay box
+        isOverlayDragging = true;
+        overlayDragStartX = e.clientX;
+        overlayDragStartY = e.clientY;
+        overlayBoxStartX = overlayBoxState.x;
+        overlayBoxStartY = overlayBoxState.y;
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isOverlayDragging) {
+            const deltaX = e.clientX - overlayDragStartX;
+            const deltaY = e.clientY - overlayDragStartY;
+
+            overlayBoxState.x = overlayBoxStartX + deltaX;
+            overlayBoxState.y = overlayBoxStartY + deltaY;
+
+            updateOverlayBoxPosition();
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isOverlayDragging) {
+            isOverlayDragging = false;
+        }
+        if (isOverlayResizing) {
+            isOverlayResizing = false;
+            currentOverlayResizeHandle = null;
+        }
+    });
+
+    // Overlay box resize functionality (maintains aspect ratio)
+    let isOverlayResizing = false;
+    let currentOverlayResizeHandle = null;
+    let overlayResizeStartX = 0;
+    let overlayResizeStartY = 0;
+
+    function attachOverlayResizeHandlers() {
+        const overlayHandles = overlayBoxOverlay.querySelectorAll('.resize-handle');
+        overlayHandles.forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                isOverlayResizing = true;
+                currentOverlayResizeHandle = handle.dataset.direction;
+                overlayResizeStartX = e.clientX;
+                overlayResizeStartY = e.clientY;
+                overlayBoxStartX = overlayBoxState.x;
+                overlayBoxStartY = overlayBoxState.y;
+                cropBoxStartWidth = overlayBoxState.width;
+                cropBoxStartHeight = overlayBoxState.height;
+
+                e.stopPropagation();
+                e.preventDefault();
+            });
+        });
+    }
+
+    // Call this after DOM is ready
+    attachOverlayResizeHandlers();
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isOverlayResizing) return;
+
+        const deltaX = e.clientX - overlayResizeStartX;
+        const deltaY = e.clientY - overlayResizeStartY;
+
+        let newWidth = cropBoxStartWidth;
+        let newHeight = cropBoxStartHeight;
+        let newX = overlayBoxStartX;
+        let newY = overlayBoxStartY;
+
+        // Always maintain aspect ratio for overlay
+        const aspectRatio = overlayBoxState.aspectRatio;
+
+        switch (currentOverlayResizeHandle) {
+            case 'se': // Bottom-right
+                newWidth = cropBoxStartWidth + deltaX;
+                newHeight = newWidth / aspectRatio;
+                break;
+            case 'sw': // Bottom-left
+                newWidth = cropBoxStartWidth - deltaX;
+                newHeight = newWidth / aspectRatio;
+                newX = overlayBoxStartX + deltaX;
+                break;
+            case 'ne': // Top-right
+                newWidth = cropBoxStartWidth + deltaX;
+                newHeight = newWidth / aspectRatio;
+                newY = overlayBoxStartY - (newHeight - cropBoxStartHeight);
+                break;
+            case 'nw': // Top-left
+                newWidth = cropBoxStartWidth - deltaX;
+                newHeight = newWidth / aspectRatio;
+                newX = overlayBoxStartX + deltaX;
+                newY = overlayBoxStartY - (newHeight - cropBoxStartHeight);
+                break;
+        }
+
+        // Enforce minimum size (10% of original overlay dimensions)
+        const minScale = 0.1;
+        const minSize = overlayBoxState.overlayOriginalWidth * minScale;
+        if (newWidth < minSize) {
+            newWidth = minSize;
+            newHeight = newWidth / aspectRatio;
+        }
+
+        // Get image boundaries to constrain resizing
+        const activeImg = getActivePreviewImage();
+        const imgRect = activeImg.getBoundingClientRect();
+        const previewRect = previewArea.getBoundingClientRect();
+        const imgOffsetX = imgRect.left - previewRect.left;
+        const imgOffsetY = imgRect.top - previewRect.top;
+
+        // Constrain to image bounds
+        if (newX < imgOffsetX) {
+            newX = imgOffsetX;
+            newWidth = overlayBoxStartX + cropBoxStartWidth - imgOffsetX;
+            newHeight = newWidth / aspectRatio;
+        }
+        if (newY < imgOffsetY) {
+            newY = imgOffsetY;
+            newHeight = overlayBoxStartY + cropBoxStartHeight - imgOffsetY;
+            newWidth = newHeight * aspectRatio;
+        }
+        if (newX + newWidth > imgOffsetX + imgRect.width) {
+            newWidth = imgOffsetX + imgRect.width - newX;
+            newHeight = newWidth / aspectRatio;
+        }
+        if (newY + newHeight > imgOffsetY + imgRect.height) {
+            newHeight = imgOffsetY + imgRect.height - newY;
+            newWidth = newHeight * aspectRatio;
+        }
+
+        overlayBoxState.width = newWidth;
+        overlayBoxState.height = newHeight;
+        overlayBoxState.x = newX;
+        overlayBoxState.y = newY;
+
+        // Calculate new scale
+        overlayBoxState.scale = newWidth / overlayBoxState.overlayOriginalWidth;
+
+        updateOverlayBoxPosition();
+    });
+
+    async function handleInitialUpload(file) {
+        loadingOverlay.style.display = 'flex';
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        // OPTIMIZATION: Send old file paths for session cleanup if they exist
+        if (originalFilePath) {
+            formData.append('old_original_path', originalFilePath);
+        }
+        if (workingFilePath) {
+            formData.append('old_working_path', workingFilePath);
+        }
+        if (previewFilePath) {
+            formData.append('old_preview_path', previewFilePath);
+        }
+
+        try {
+            const response = await fetch('{% url "initial_upload" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                originalFilePath = data.original_file_path;
+                workingFilePath = data.working_file_path;
+                previewFilePath = data.preview_file_path;
+
+                // NEW: Store dimensions
+                currentImageWidth = data.image_width;
+                currentImageHeight = data.image_height;
+
+                uploadPrompt.classList.add('hidden');
+
+                // Show both (we control visibility)
+                previewImage.style.display = 'block';
+                previewImageBuffer.style.display = 'block';
+
+                previewSeq += 1;
+                await swapPreviewUrl(data.temp_image_url, previewSeq);
+
+                // Disable click-to-upload and show "Upload New Picture" button
+                imageUpload.classList.add('disabled');
+                uploadNewBtn.style.display = 'block';
+
+                // Initialize text box to default position (bottom-middle)
+                initializeTextBox();
+
+                resetButton.disabled = false;
+                downloadButton.disabled = false;
+                aiEditorButton.disabled = false;
+
+                toolButtons.forEach(btn => btn.classList.remove('active'));
+                settingsTitle.textContent = "Select a Tool";
+                toolSettingsDiv.innerHTML = '<p>Select a tool on the left to adjust settings.</p>';
+                applyButton.disabled = true;
+                currentToolKey = null;
+
+            } else {
+                alert('Upload Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Initial upload fetch error:', error);
+            alert('An unexpected error occurred during initial upload.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+
+    // --- Seamless preview swapping (no fade, no flash) ---
+    let previewActiveIsPrimary = true;
+    let previewSeq = 0;
+    let previewAbortController = null;
+
+    function _waitForImgLoad(imgEl) {
+        return new Promise((resolve, reject) => {
+            if (imgEl.complete && imgEl.naturalWidth > 0) return resolve();
+            imgEl.onload = () => resolve();
+            imgEl.onerror = () => reject(new Error('Image failed to load'));
+            // Timeout fallback to prevent infinite waiting
+            setTimeout(() => {
+                if (imgEl.complete && imgEl.naturalWidth > 0) {
+                    resolve();
+                } else {
+                    reject(new Error('Image load timeout'));
+                }
+            }, 10000); // 10 second timeout
+        });
+    }
+
+    async function _decodeIfPossible(imgEl) {
+        if (typeof imgEl.decode === 'function') {
+            try {
+                await imgEl.decode();
+            } catch (err) {
+                // Image decode failed, but we can still display it
+                console.warn('Image decode failed:', err);
+            }
+        }
+    }
+
+    async function swapPreviewUrl(url, seqToken) {
+        // If a newer request started, ignore this one
+        if (seqToken !== previewSeq) return;
+
+        const front = previewActiveIsPrimary ? previewImage : previewImageBuffer;
+        const back = previewActiveIsPrimary ? previewImageBuffer : previewImage;
+
+        // Ensure both are in the layout; we hide via visibility to avoid flicker
+        front.style.display = 'block';
+        back.style.display = 'block';
+
+        // Load into the hidden one
+        back.style.visibility = 'hidden';
+        back.src = url;
+
+        await _waitForImgLoad(back);
+        await _decodeIfPossible(back);
+
+        // Ignore if stale after await
+        if (seqToken !== previewSeq) return;
+
+        // Atomic swap
+        back.style.visibility = 'visible';
+        front.style.visibility = 'hidden';
+        previewActiveIsPrimary = !previewActiveIsPrimary;
+    }
+
+    // NEW FUNCTION: Handles live preview updates without committing
+    async function handlePreviewUpdate() {
+        if (!workingFilePath || !previewFilePath || !currentToolKey) return;
+
+        // IMPORTANT: Skip preview for subtitle, crop, and overlay tools - only render on Apply
+        if (currentToolKey === 'subtitle' || currentToolKey === 'crop' || currentToolKey === 'overlay') {
+            applyButton.disabled = false; // Enable apply button when changes are made
+            return;
+        }
+
+        // OPTIMIZATION: Check if the tool is "resize" and values match current dimensions.
+        if (currentToolKey === 'resize') {
+            const widthInput = document.getElementById('width');
+            const heightInput = document.getElementById('height');
+
+            if (widthInput && heightInput) {
+                const currentW = parseInt(widthInput.value);
+                const currentH = parseInt(heightInput.value);
+                if (currentW === currentImageWidth && currentH === currentImageHeight) {
+                    return;
+                }
+            }
+        }
+
+        // Abort previous in-flight preview request
+        if (previewAbortController) {
+            try {
+                previewAbortController.abort();
+            } catch (_) {
+            }
+        }
+        previewAbortController = new AbortController();
+
+        previewSeq += 1;
+        const seqToken = previewSeq;
+
+        // Add subtle processing indicator
+        previewArea.classList.add('processing');
+
+        const formData = new FormData();
+        formData.append('working_file_path', workingFilePath); // Source: Committed state
+        formData.append('current_preview_path', previewFilePath); // Destination: Transient state
+        formData.append('tool_key', currentToolKey);
+
+        const options = {};
+        const settingInputs = toolSettingsDiv.querySelectorAll('input, select, textarea');
+
+        settingInputs.forEach(input => {
+            let value;
+            if (input.type === 'checkbox') {
+                value = input.checked;
+            } else {
+                value = input.value;
+            }
+            options[input.name] = value;
+        });
+
+        // For subtitle tool, calculate and send text box coordinates relative to image
+        if (currentToolKey === 'subtitle') {
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            // Convert text box position from preview area coordinates to image coordinates
+            const relX = textBoxState.x - imgOffsetX;
+            const relY = textBoxState.y - imgOffsetY;
+
+            // Calculate as percentage of image dimensions for backend
+            const xPercent = relX / imgRect.width;
+            const yPercent = relY / imgRect.height;
+            const widthPercent = textBoxState.width / imgRect.width;
+            const heightPercent = textBoxState.height / imgRect.height;
+
+            // BUG FIX: Scale font size and stroke width proportionally to image scaling
+            if (options.font_size) {
+                 const scaleFactor = currentImageWidth / imgRect.width;
+                 options.font_size = Math.round(options.font_size * scaleFactor);
+                 if (options.stroke_width) {
+                     options.stroke_width = Math.round(options.stroke_width * scaleFactor);
+                 }
+            }
+
+            // Send as pixel coordinates based on actual image dimensions
+            options.box = [
+                Math.round(xPercent * currentImageWidth),
+                Math.round(yPercent * currentImageHeight),
+                Math.round((xPercent + widthPercent) * currentImageWidth),
+                Math.round((yPercent + heightPercent) * currentImageHeight)
+            ];
+        }
+
+        // For crop tool, calculate and send crop box coordinates relative to image
+        if (currentToolKey === 'crop') {
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            // Convert crop box position from preview area coordinates to image coordinates
+            const relX = cropBoxState.x - imgOffsetX;
+            const relY = cropBoxState.y - imgOffsetY;
+
+            // Calculate as percentage of image dimensions
+            const xPercent = relX / imgRect.width;
+            const yPercent = relY / imgRect.height;
+            const widthPercent = cropBoxState.width / imgRect.width;
+            const heightPercent = cropBoxState.height / imgRect.height;
+
+            // Send as pixel coordinates (left, top, right, bottom) based on actual image dimensions
+            const left = Math.max(0, Math.round(xPercent * currentImageWidth));
+            const top = Math.max(0, Math.round(yPercent * currentImageHeight));
+            const right = Math.min(currentImageWidth, Math.round((xPercent + widthPercent) * currentImageWidth));
+            const bottom = Math.min(currentImageHeight, Math.round((yPercent + heightPercent) * currentImageHeight));
+
+            options.left = left;
+            options.top = top;
+            options.right = right;
+            options.bottom = bottom;
+        }
+
+        // For overlay tool, calculate and send overlay box coordinates relative to image
+        if (currentToolKey === 'overlay') {
+            if (overlayBoxState.overlayPath) {
+                const activeImg = getActivePreviewImage();
+                const imgRect = activeImg.getBoundingClientRect();
+                const previewRect = previewArea.getBoundingClientRect();
+                const imgOffsetX = imgRect.left - previewRect.left;
+                const imgOffsetY = imgRect.top - previewRect.top;
+
+                // Convert overlay box position from preview area coordinates to image coordinates
+                const relX = overlayBoxState.x - imgOffsetX;
+                const relY = overlayBoxState.y - imgOffsetY;
+
+                // Calculate as percentage of image dimensions
+                const xPercent = relX / imgRect.width;
+                const yPercent = relY / imgRect.height;
+
+                // Send as pixel coordinates based on actual image dimensions
+                options.x = Math.max(0, Math.round(xPercent * currentImageWidth));
+                options.y = Math.max(0, Math.round(yPercent * currentImageHeight));
+                options.scale = overlayBoxState.scale;
+            }
+        }
+
+        formData.append('options', JSON.stringify(options));
+
+        try {
+            const response = await fetch('{% url "preview_image" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body: formData,
+                signal: previewAbortController.signal,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const newImageURL = data.temp_image_url + '?v=' + seqToken;
+                await swapPreviewUrl(newImageURL, seqToken);
+
+                previewFilePath = data.preview_file_path;
+                applyButton.disabled = false;
+
+                // Update dimensions if crop tool returned new dimensions
+                if (currentToolKey === 'crop' && data.new_width && data.new_height) {
+                    // Note: Don't update currentImageWidth/Height yet - only on Apply
+                    // This is just preview, dimensions change on commit
+                }
+
+                // Remove processing indicator after successful swap
+                previewArea.classList.remove('processing');
+            } else {
+                console.error('Preview Error:', data.error);
+                previewArea.classList.remove('processing');
+            }
+        } catch (error) {
+            if (error && error.name === 'AbortError') {
+                previewArea.classList.remove('processing');
+                return; // expected during slider drags
+            }
+            console.error('Preview fetch error:', error);
+            previewArea.classList.remove('processing');
+        }
+    }
+
+
+    // UPDATED: applyEdit now copies the PREVIEW state to the WORKING state (COMMIT)
+    async function applyEdit() {
+        if (!workingFilePath || !previewFilePath) return;
+
+        loadingOverlay.style.display = 'flex';
+
+        // Special handling for crop tool - process directly with coordinates
+        if (currentToolKey === 'crop') {
+            const formData = new FormData();
+            formData.append('working_file_path', workingFilePath);
+            formData.append('current_preview_path', previewFilePath);
+            formData.append('tool_key', currentToolKey);
+
+            // Calculate crop coordinates
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            const relX = cropBoxState.x - imgOffsetX;
+            const relY = cropBoxState.y - imgOffsetY;
+
+            const xPercent = relX / imgRect.width;
+            const yPercent = relY / imgRect.height;
+            const widthPercent = cropBoxState.width / imgRect.width;
+            const heightPercent = cropBoxState.height / imgRect.height;
+
+            const options = {
+                left: Math.max(0, Math.round(xPercent * currentImageWidth)),
+                top: Math.max(0, Math.round(yPercent * currentImageHeight)),
+                right: Math.min(currentImageWidth, Math.round((xPercent + widthPercent) * currentImageWidth)),
+                bottom: Math.min(currentImageHeight, Math.round((yPercent + heightPercent) * currentImageHeight))
+            };
+
+            formData.append('options', JSON.stringify(options));
+
+            try {
+                // Use preview endpoint to generate the cropped image
+                const response = await fetch('{% url "preview_image" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    previewFilePath = data.preview_file_path;
+
+                    // Copy preview to working
+                    const copyFormData = new FormData();
+                    copyFormData.append('working_file_path', workingFilePath);
+                    copyFormData.append('preview_file_path', previewFilePath);
+
+                    const copyResponse = await fetch('{% url "process_image" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: copyFormData,
+                    });
+
+                    const copyData = await copyResponse.json();
+
+                    if (copyData.success) {
+                        workingFilePath = copyData.working_file_path;
+
+                        if (cropBoxOverlay) cropBoxOverlay.classList.remove('active');
+
+                        // Update dimensions from backend
+                        if (copyData.new_width && copyData.new_height) {
+                            currentImageWidth = copyData.new_width;
+                            currentImageHeight = copyData.new_height;
+                        }
+
+                        // Update preview to show the final result
+                        previewSeq += 1;
+                        await swapPreviewUrl(copyData.temp_image_url + '?v=' + previewSeq, previewSeq);
+
+                        // Reinitialize crop and text boxes for new image dimensions
+                        // Use both onload (for when image loads) and immediate with delay (for cached images)
+                        const reinitializeBoxes = () => {
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    initializeCropBox();
+                                    initializeTextBox();
+                                });
+                            });
+                        };
+
+                        // Try immediate (works if image is cached)
+                        reinitializeBoxes();
+
+                        // Also set onload handler (works if image needs to load)
+                        previewImage.onload = () => {
+                            reinitializeBoxes();
+                            previewImage.onload = null;
+                        };
+
+                        // Switch to filter tool after cropping
+                        const filterButton = document.querySelector('[data-tool-key="filter"]');
+                        if (filterButton) {
+                            filterButton.click();
+                        }
+
+                        applyButton.disabled = true;
+                        alert("Crop successfully applied to the image.");
+                    } else {
+                        alert('Error: ' + copyData.error);
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('An unexpected error occurred during crop processing.');
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+            return;
+        }
+
+        // Special handling for subtitle tool - process directly with coordinates
+        if (currentToolKey === 'subtitle') {
+            const formData = new FormData();
+            formData.append('working_file_path', workingFilePath);
+            formData.append('current_preview_path', previewFilePath);
+            formData.append('tool_key', currentToolKey);
+
+            // Collect subtitle options
+            const options = {};
+            const settingInputs = toolSettingsDiv.querySelectorAll('input, select, textarea');
+
+            settingInputs.forEach(input => {
+                let value;
+                if (input.type === 'checkbox') {
+                    value = input.checked;
+                } else {
+                    value = input.value;
+                }
+                options[input.name] = value;
+            });
+
+            // Calculate and add text box coordinates
+            const imgRect = previewImage.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            const relX = textBoxState.x - imgOffsetX;
+            const relY = textBoxState.y - imgOffsetY;
+
+            const xPercent = relX / imgRect.width;
+            const yPercent = relY / imgRect.height;
+            const widthPercent = textBoxState.width / imgRect.width;
+            const heightPercent = textBoxState.height / imgRect.height;
+
+            // BUG FIX: Scale font size and stroke width proportionally to image scaling
+            if (options.font_size) {
+                 const scaleFactor = currentImageWidth / imgRect.width;
+                 options.font_size = Math.round(options.font_size * scaleFactor);
+                 if (options.stroke_width) {
+                     options.stroke_width = Math.round(options.stroke_width * scaleFactor);
+                 }
+            }
+
+            options.box = [
+                Math.round(xPercent * currentImageWidth),
+                Math.round(yPercent * currentImageHeight),
+                Math.round((xPercent + widthPercent) * currentImageWidth),
+                Math.round((yPercent + heightPercent) * currentImageHeight)
+            ];
+
+            formData.append('options', JSON.stringify(options));
+
+            try {
+                // Use preview endpoint to generate the subtitle image
+                const response = await fetch('{% url "preview_image" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Now copy preview to working
+                    const copyFormData = new FormData();
+                    copyFormData.append('working_file_path', workingFilePath);
+                    copyFormData.append('preview_file_path', previewFilePath);
+
+                    const copyResponse = await fetch('{% url "process_image" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: copyFormData,
+                    });
+
+                    const copyData = await copyResponse.json();
+
+                    if (copyData.success) {
+                        workingFilePath = copyData.working_file_path;
+
+                        // Update preview to show the final result
+                        previewSeq += 1;
+                        await swapPreviewUrl(copyData.temp_image_url + '?v=' + previewSeq, previewSeq);
+
+                        alert("Text successfully applied to the image.");
+                        // CHANGED: Keep Apply button enabled for subtitle tool to allow reapplying text
+                        // applyButton.disabled = true; // Remove this line for subtitles
+                    } else {
+                        alert('Error: ' + copyData.error);
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('An unexpected error occurred during processing.');
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+            return;
+        }
+
+        // Special handling for overlay tool - process directly with coordinates
+        if (currentToolKey === 'overlay') {
+            if (!overlayBoxState.overlayPath) {
+                alert('Please upload a PNG overlay image first.');
+                loadingOverlay.style.display = 'none';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('working_file_path', workingFilePath);
+            formData.append('current_preview_path', previewFilePath);
+            formData.append('tool_key', currentToolKey);
+
+            // Collect overlay options
+            const options = {};
+            const settingInputs = toolSettingsDiv.querySelectorAll('input, select, textarea');
+
+            settingInputs.forEach(input => {
+                let value;
+                if (input.type === 'checkbox') {
+                    value = input.checked;
+                } else {
+                    value = input.value;
+                }
+                options[input.name] = value;
+            });
+
+            // Calculate and add overlay box coordinates
+            const activeImg = getActivePreviewImage();
+            const imgRect = activeImg.getBoundingClientRect();
+            const previewRect = previewArea.getBoundingClientRect();
+            const imgOffsetX = imgRect.left - previewRect.left;
+            const imgOffsetY = imgRect.top - previewRect.top;
+
+            const relX = overlayBoxState.x - imgOffsetX;
+            const relY = overlayBoxState.y - imgOffsetY;
+
+            const xPercent = relX / imgRect.width;
+            const yPercent = relY / imgRect.height;
+
+            options.x = Math.max(0, Math.round(xPercent * currentImageWidth));
+            options.y = Math.max(0, Math.round(yPercent * currentImageHeight));
+
+            // Fix: Adjust scale to account for image scaling (similar to font size fix)
+            const scaleFactor = currentImageWidth / imgRect.width;
+            options.scale = overlayBoxState.scale * scaleFactor;
+
+            formData.append('options', JSON.stringify(options));
+
+            try {
+                // Use preview endpoint to generate the overlay image
+                const response = await fetch('{% url "preview_image" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Now copy preview to working
+                    const copyFormData = new FormData();
+                    copyFormData.append('working_file_path', workingFilePath);
+                    copyFormData.append('preview_file_path', previewFilePath);
+
+                    const copyResponse = await fetch('{% url "process_image" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: copyFormData,
+                    });
+
+                    const copyData = await copyResponse.json();
+
+                    if (copyData.success) {
+                        workingFilePath = copyData.working_file_path;
+
+                        // Update preview to show the final result
+                        previewSeq += 1;
+                        await swapPreviewUrl(copyData.temp_image_url + '?v=' + previewSeq, previewSeq);
+
+                        // Hide overlay box after applying
+                        overlayBoxOverlay.classList.remove('active');
+
+                        // Reset overlay state for next use
+                        overlayBoxState.overlayPath = null;
+
+                        alert("Overlay successfully applied to the image.");
+                        applyButton.disabled = true;
+                    } else {
+                        alert('Error: ' + copyData.error);
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('An unexpected error occurred during overlay processing.');
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+            return;
+        }
+
+        // Original logic for other tools
+        const formData = new FormData();
+        formData.append('working_file_path', workingFilePath);
+        formData.append('preview_file_path', previewFilePath);
+
+        try {
+            const response = await fetch('{% url "process_image" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                workingFilePath = data.working_file_path;
+
+                // Update dimensions from backend response (handles crop and resize)
+                if (data.new_width && data.new_height) {
+                    currentImageWidth = data.new_width;
+                    currentImageHeight = data.new_height;
+
+                    // Reinitialize both boxes to fit new image dimensions
+                    const reinitializeBoxes = () => {
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                initializeTextBox();
+                                initializeCropBox();
+                            });
+                        });
+                    };
+
+                    // Try immediate (works if image is cached)
+                    reinitializeBoxes();
+
+                    // Also set onload handler (works if image needs to load)
+                    previewImage.onload = () => {
+                        reinitializeBoxes();
+                        previewImage.onload = null;
+                    };
+                } else if (currentToolKey === 'resize') {
+                    // Fallback for resize if backend doesn't send dimensions
+                    const widthInput = document.getElementById('width');
+                    const heightInput = document.getElementById('height');
+                    if (widthInput && heightInput) {
+                        currentImageWidth = parseInt(widthInput.value);
+                        currentImageHeight = parseInt(heightInput.value);
+                    }
+                }
+
+                alert("Changes successfully applied to the working copy.");
+                applyButton.disabled = true; // Keep disabled for other tools
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            alert('An unexpected error occurred during processing.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+
+
+    // UPDATED: resetImage handles three file states
+    async function resetImage() {
+        if (!originalFilePath) return;
+
+        loadingOverlay.style.display = 'flex';
+
+        const formData = new FormData();
+        formData.append('original_file_path', originalFilePath);
+        formData.append('working_file_path', workingFilePath);
+        formData.append('preview_file_path', previewFilePath);
+
+        try {
+            const response = await fetch('{% url "reset_image_state" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                workingFilePath = data.working_file_path;
+                previewFilePath = data.preview_file_path;
+                currentImageWidth = data.image_width;
+                currentImageHeight = data.image_height;
+
+                previewSeq += 1;
+                await swapPreviewUrl(data.temp_image_url + '?v=' + previewSeq, previewSeq);
+
+                alert("Image preview state reset to the original upload (new copies created).");
+
+                if (currentToolKey) {
+                    renderSettings(currentToolKey);
+                } else {
+                    applyButton.disabled = true;
+                }
+            } else {
+                alert('Reset Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Reset fetch error:', error);
+            alert('An unexpected error occurred during reset.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+
+    // 1. Tool Selection
+    toolButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            if (!workingFilePath) {
+                alert("Please upload an image first.");
+                return;
+            }
+
+            // If there are unsaved preview changes (Apply enabled), discard them by
+            // resetting the transient preview to match the committed working copy.
+            if (!applyButton.disabled) {
+                try {
+                    const formData = new FormData();
+                    formData.append('working_file_path', workingFilePath);
+                    formData.append('current_preview_path', previewFilePath);
+
+                    const resp = await fetch('{% url "reset_preview" %}', {
+                        method: 'POST',
+                        headers: {'X-CSRFToken': csrftoken},
+                        body: formData
+                    });
+
+                    const data = await resp.json();
+                    if (data.success) {
+                        previewFilePath = data.preview_file_path;
+                        previewSeq += 1;
+                        await swapPreviewUrl(data.temp_image_url + '?v=' + previewSeq, previewSeq);
+                        applyButton.disabled = true; // no unsaved preview changes now
+                    } else {
+                        console.error('Reset preview failed:', data.error);
+                        alert('Could not reset preview: ' + (data.error || 'Unknown error'));
+                        // Fallback: do not change tool selection to avoid losing work
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Reset preview fetch error:', err);
+                    alert('An unexpected error occurred while resetting preview.');
+                    return;
+                }
+            }
+
+            toolButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            renderSettings(button.dataset.toolKey);
+        });
+    });
+
+    // 2. Main Action Buttons
+    applyButton.addEventListener('click', applyEdit);
+    resetButton.addEventListener('click', resetImage);
+
+    downloadButton.addEventListener('click', () => {
+        if (workingFilePath) {
+            // Download uses the committed state (workingFilePath)
+            window.location.href = `{% url "download_image" %}?file_path=${workingFilePath}`;
+        } else {
+            alert("No image is currently available for download.");
+        }
+    });
+
+    // AI Editor Button - Transfer image to AI page
+    aiEditorButton.addEventListener('click', () => {
+        if (originalFilePath && workingFilePath && previewFilePath) {
+            // Build URL with image paths as query parameters
+            const aiEditorUrl = '{% url "ai_editor_page" %}' +
+                `?original_path=${encodeURIComponent(originalFilePath)}` +
+                `&working_path=${encodeURIComponent(workingFilePath)}` +
+                `&preview_path=${encodeURIComponent(previewFilePath)}`;
+            window.location.href = aiEditorUrl;
+        } else {
+            alert("No image is currently loaded.");
+        }
+    });
+
+
+    // 3. Image Upload (Handles Clicks and Native Drops)
+    imageUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            imageUpload.value = ''; // Allow re-uploading the same file
+            currentImageFile = file;
+            handleInitialUpload(file);
+        }
+    });
+
+    // Upload New Picture Button Handler - Simply open file dialog
+    uploadNewBtn.addEventListener('click', () => {
+        imageUpload.click();
+    });
+
+    // 4. Drag-and-Drop Visual Feedback (using correct hex values)
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        previewArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        previewArea.addEventListener(eventName, () => {
+            uploadPrompt.style.borderColor = '#007bff';
+            uploadPrompt.style.color = '#007bff';
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        previewArea.addEventListener(eventName, () => {
+            uploadPrompt.style.borderColor = '#6c757d';
+            uploadPrompt.style.color = '#6c757d';
+        }, false);
+    });
+
+    previewArea.addEventListener('drop', (e) => {
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            currentImageFile = file;
+            handleInitialUpload(file);
+        }
+    }, false);
+
+</script>
+</body>
+</html>
+

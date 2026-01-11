@@ -1,0 +1,233 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Editor</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <style>
+        body { background-color: #f8f9fa; height: 100vh; overflow: hidden; }
+        .main-container { height: 100vh; display: flex; }
+
+        /* Workspace Styles */
+        .video-workspace {
+            flex-grow: 1;
+            background-color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        #preview-video {
+            max-width: 100%;
+            max-height: 90vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            display: none;
+        }
+
+        /* Sidebar Styles */
+        .settings-sidebar {
+            width: 380px;
+            background: white;
+            border-left: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+        }
+        .scrollable-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        /* Overlay & Upload Styles */
+        #processing-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .upload-placeholder {
+            border: 2px dashed #6c757d;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .upload-placeholder:hover {
+            border-color: #0d6efd;
+            color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        .form-range {
+            width: 100%;
+            height: 1.5rem;
+            padding: 0;
+            background-color: transparent;
+            appearance: auto;
+        }
+
+
+        input[type=range]::-webkit-slider-runnable-track {
+            background: #dee2e6;
+            border-radius: 1rem;
+            height: 0.5rem;
+        }
+
+        input[type=range]::-moz-range-track {
+            background: #dee2e6;
+            border-radius: 1rem;
+            height: 0.5rem;
+        }
+        #video-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* The overlay itself should not block clicks to the video beneath it */
+        .crop-box-overlay {
+            position: absolute;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+            pointer-events: none; /* Allows clicking 'Play' through the shadow */
+        }
+
+        /* Re-enable clicking ONLY for the box border and handles */
+        .crop-box-overlay::before {
+            content: '';
+            position: absolute;
+            inset: -5px; /* Creates a small clickable 'hit area' around the border */
+            border: 5px solid transparent;
+            pointer-events: auto;
+            cursor: move;
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #00ff00;
+            border: 2px solid white;
+            border-radius: 50%;
+            pointer-events: auto; /* Allows grabbing handles */
+            z-index: 11;
+        }
+        .nw { top: -6px; left: -6px; cursor: nw-resize; }
+        .ne { top: -6px; right: -6px; cursor: ne-resize; }
+        .sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+        .se { bottom: -6px; right: -6px; cursor: se-resize; }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="video-workspace">
+        <div id="processing-overlay">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+            <h4 id="status-text">Processing...</h4>
+            <div class="progress w-50" style="height: 10px;">
+                <div id="task-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div id="upload-container">
+            <div class="upload-placeholder" onclick="document.getElementById('video-file-input').click()">
+                <i class="bi bi-cloud-arrow-up fs-1"></i>
+                <h3 class="mt-3">Upload Video</h3>
+                <p class="text-muted">MP4, MOV, or WebM</p>
+                <input type="file" id="video-file-input" hidden accept="video/*">
+            </div>
+        </div>
+
+        <div id="video-wrapper" style="position: relative; display: inline-block;">
+            <video id="preview-video" controls style="max-width: 100%; display: block;"></video>
+
+            <div id="visual-crop-box" class="crop-box-overlay" style="display: none;">
+                <div class="crop-grid">
+                    <div class="crop-grid-line horizontal"></div>
+                    <div class="crop-grid-line horizontal"></div>
+                    <div class="crop-grid-line vertical"></div>
+                    <div class="crop-grid-line vertical"></div>
+                </div>
+                <div class="crop-aspect-display" id="crop-badge">FREE</div>
+
+                <div class="resize-handle nw" data-handle="nw"></div>
+                <div class="resize-handle ne" data-handle="ne"></div>
+                <div class="resize-handle sw" data-handle="sw"></div>
+                <div class="resize-handle se" data-direction="se"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-sidebar">
+        <div class="p-3 border-bottom bg-light">
+            <h5 class="mb-0"><i class="bi bi-film me-2"></i>Video Editor</h5>
+        </div>
+
+        <div class="scrollable-content">
+            <label class="form-label fw-bold mb-3">Editing Tools</label>
+            <div class="list-group mb-4">
+                {% for key, tool in template_tools.items %}
+                <button class="list-group-item list-group-item-action tool-btn" data-tool-key="{{ key }}">
+                    <i class="bi bi-gear-wide-connected me-2"></i> {{ tool.name }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <div id="tool-settings-area" class="border p-3 rounded bg-light">
+                <p class="text-muted small mb-0 text-center">Select a tool above to begin editing.</p>
+            </div>
+        </div>
+
+        <div class="p-3 border-top bg-light">
+            <button id="apply-btn" class="btn btn-success w-100 mb-2 py-2 fw-bold" disabled>
+                <i class="bi bi-play-circle me-1"></i> Preview Effect
+            </button>
+
+            <button id="commit-btn" class="btn btn-outline-success w-100 mb-2 py-2 fw-bold d-none">
+                <i class="bi bi-check-lg me-1"></i> Save Changes
+            </button>
+
+            <button id="reset-btn" class="btn btn-outline-danger w-100 mb-2 py-2 fw-bold" disabled>
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset to Original
+            </button>
+
+            <hr class="my-2">
+
+            <button id="download-btn" class="btn btn-primary w-100 py-2 fw-bold" disabled>
+                <i class="bi bi-download me-1"></i> Download Result
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.EditorConfig = {
+        csrfToken: '{{ csrf_token }}',
+        endpoints: {
+            initialUpload: "{% url 'initial_video_upload' %}",
+            preview: "{% url 'preview_video' %}",
+            status: "/api/task-status/", // Base path for the task ID
+            process: "{% url 'process_video' %}",
+            reset: "{% url 'reset_video_state' %}",
+            download: "{% url 'download_video' %}"
+        },
+        tools: JSON.parse('{{ js_editor_tools|safe }}')
+    };
+</script>
+
+<script src="{% static 'imageditor/js/video_editor.js' %}"></script>
+
+</body>
+</html>

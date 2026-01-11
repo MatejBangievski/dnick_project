@@ -1,0 +1,488 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Editor</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .main-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Main Content Area */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        /* Image Preview Area */
+        .image-preview-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            position: relative;
+            min-height: 400px;
+        }
+
+        #preview-image {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        #preview-image.show {
+            display: block;
+        }
+
+        .upload-placeholder {
+            text-align: center;
+            color: #6c757d;
+        }
+
+        .upload-placeholder i {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        /* Chat Interface */
+        .chat-interface {
+            border-top: 2px solid #e9ecef;
+            padding: 20px;
+            background: white;
+        }
+
+        .prompt-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .prompt-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #prompt-input {
+            width: 100%;
+            min-height: 60px;
+            max-height: 150px;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            resize: none;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        #prompt-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        #send-btn {
+            padding: 0 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 60px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        #send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        #send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #reset-btn {
+            padding: 0 25px;
+            background: white;
+            border: 2px solid #dc3545;
+            border-radius: 12px;
+            color: #dc3545;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 60px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        #reset-btn:hover:not(:disabled) {
+            background: #dc3545;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        #reset-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .file-upload-btn {
+            padding: 0 25px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 60px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .file-upload-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <!-- Header -->
+    <div class="header">
+        <h1><i class="bi bi-stars me-2"></i>AI Image Editor</h1>
+        <a href="{% url 'editor_page' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Editor
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-area">
+        <!-- Image Preview Area -->
+        <div class="image-preview-area">
+            <div class="upload-placeholder" id="upload-placeholder">
+                <i class="bi bi-image"></i>
+                <h3>Upload an Image to Begin</h3>
+                <p class="text-muted">Your image will appear here</p>
+            </div>
+
+            <img id="preview-image" alt="Preview" class="{% if has_image %}show{% endif %}">
+
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="spinner-border text-primary mb-3"></div>
+                <h5>Generating AI Image...</h5>
+                <p class="text-muted">This may take a few moments</p>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="chat-interface">
+            <div class="error-message" id="error-message"></div>
+
+            <div class="prompt-container">
+                <label for="image-file-input" class="file-upload-btn">
+                    <i class="bi bi-upload"></i>
+                    <span>Upload</span>
+                </label>
+                <input type="file" id="image-file-input" accept="image/*" hidden>
+
+                <div class="prompt-input-wrapper">
+                    <textarea
+                        id="prompt-input"
+                        placeholder="Describe how you want to edit the image... (e.g., 'Make it more vibrant and add a sunset background')"
+                        {% if not has_image and not gemini_available %}disabled{% endif %}
+                    ></textarea>
+                </div>
+
+                <button id="reset-btn" {% if not has_image %}disabled{% endif %}>
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    <span>Reset</span>
+                </button>
+
+                <button id="send-btn" {% if not has_image or not gemini_available %}disabled{% endif %}>
+                    <i class="bi bi-send-fill"></i>
+                    <span>Generate</span>
+                </button>
+            </div>
+
+            {% if not gemini_available %}
+            <div class="alert alert-warning mt-3 mb-0">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Google Gemini API not available.</strong> Please install the google-genai library and set your GEMINI_API_KEY environment variable.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // CSRF Token
+    const csrftoken = '{{ csrf_token }}';
+
+    // DOM Elements
+    const previewImage = document.getElementById('preview-image');
+    const uploadPlaceholder = document.getElementById('upload-placeholder');
+    const promptInput = document.getElementById('prompt-input');
+    const sendBtn = document.getElementById('send-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const errorMessage = document.getElementById('error-message');
+    const imageFileInput = document.getElementById('image-file-input');
+
+    // State
+    let currentImagePath = '{{ preview_path }}' || '{{ working_path }}' || '';
+    let originalImagePath = '{{ original_path }}' || currentImagePath;
+    let hasImage = {{ has_image|lower }};
+
+    // Initialize: If image transferred from editor, load it
+    if (hasImage && currentImagePath) {
+        previewImage.src = '/media/' + currentImagePath + '?v=' + Date.now();
+        previewImage.classList.add('show');
+        uploadPlaceholder.style.display = 'none';
+        enableInterface();
+    }
+
+    // File Upload Handler
+    imageFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Show preview immediately
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImage.src = e.target.result;
+            previewImage.classList.add('show');
+            uploadPlaceholder.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+
+        hasImage = true;
+        currentImagePath = '';  // New upload, no path yet
+        originalImagePath = '';
+        enableInterface();
+
+        // Store the file for later use
+        window.uploadedFile = file;
+    });
+
+    // Send Button Handler
+    sendBtn.addEventListener('click', async () => {
+        const prompt = promptInput.value.trim();
+        if (!prompt) {
+            showError('Please enter a prompt describing how you want to edit the image.');
+            return;
+        }
+
+        if (!hasImage && !window.uploadedFile) {
+            showError('Please upload an image first.');
+            return;
+        }
+
+        hideError();
+        loadingOverlay.classList.add('show');
+        sendBtn.disabled = true;
+        resetBtn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('prompt', prompt);
+
+            // Add image - either uploaded file or existing path
+            if (window.uploadedFile) {
+                formData.append('image', window.uploadedFile);
+            } else if (currentImagePath) {
+                formData.append('image_path', currentImagePath);
+            }
+
+            const response = await fetch('{% url "generate_ai_image" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Update preview with AI-generated image
+                previewImage.src = data.image_url + '?v=' + Date.now();
+                currentImagePath = data.image_path;
+
+                // Clear prompt for next generation
+                promptInput.value = '';
+
+                // Show success briefly
+                showSuccess('Image generated successfully!');
+            } else {
+                showError(data.error || 'Failed to generate image.');
+            }
+        } catch (error) {
+            console.error('Generation error:', error);
+            showError('An unexpected error occurred. Please try again.');
+        } finally {
+            loadingOverlay.classList.remove('show');
+            sendBtn.disabled = false;
+            resetBtn.disabled = false;
+        }
+    });
+
+    // Reset Button Handler
+    resetBtn.addEventListener('click', () => {
+        if (originalImagePath) {
+            // Reset to original image from editor
+            previewImage.src = '/media/' + originalImagePath + '?v=' + Date.now();
+            currentImagePath = originalImagePath;
+        } else if (window.uploadedFile) {
+            // Reset to uploaded file
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+            };
+            reader.readAsDataURL(window.uploadedFile);
+        }
+        promptInput.value = '';
+        hideError();
+    });
+
+    // Enter key to send (Shift+Enter for new line)
+    promptInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!sendBtn.disabled) {
+                sendBtn.click();
+            }
+        }
+    });
+
+    // Helper Functions
+    function enableInterface() {
+        promptInput.disabled = false;
+        sendBtn.disabled = false;
+        resetBtn.disabled = false;
+    }
+
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.add('show');
+    }
+
+    function hideError() {
+        errorMessage.classList.remove('show');
+    }
+
+    function showSuccess(message) {
+        // Temporary success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+        successDiv.style.zIndex = '9999';
+        successDiv.innerHTML = `<i class="bi bi-check-circle me-2"></i>${message}`;
+        document.body.appendChild(successDiv);
+
+        setTimeout(() => {
+            successDiv.remove();
+        }, 3000);
+    }
+</script>
+
+</body>
+</html>
+
