@@ -83,7 +83,17 @@ function renderSettings(key) {
                             <span id="val-${opt.id}" class="badge bg-primary">${opt.default}</span>
                          </div>`;
             inputHtml = `<input type="range" class="form-range" id="${opt.id}" min="${opt.min}" max="${opt.max}" step="${opt.step || 1}" value="${opt.default}" 
-                         oninput="document.getElementById('val-${opt.id}').innerText = this.value; if(window.updateTextBoxContent) window.updateTextBoxContent();">`;
+                         oninput="
+                            document.getElementById('val-${opt.id}').innerText = this.value; 
+
+                            if('${opt.id}' === 'opacity') {
+                                const content = document.getElementById('watermark-text-content');
+                                if(content) content.style.opacity = this.value;
+                            }
+        
+                            // 3. Keep existing watermark text logic if applicable
+                            if(window.updateTextBoxContent) window.updateTextBoxContent();
+                         ">`;
         }
 
         // --- BUTTON GROUP (Updated to sync with slider/badge) ---
@@ -153,8 +163,10 @@ function renderSettings(key) {
                     onclick="
                         const slider = document.getElementById('opacity');
                         const badge = document.getElementById('val-opacity');
-                        if(slider) { slider.value = ${b.value}; }
-                        if(badge) { badge.innerText = ${b.value}; }
+                        const content = document.getElementById('watermark-text-content');
+                        if(slider) slider.value = ${b.value};
+                        if(badge) badge.innerText = ${b.value};
+                        if(content) content.style.opacity = ${b.value}; // Sync preview
                         if(window.updateTextBoxContent) window.updateTextBoxContent();
                     ">
                     ${b.label}
@@ -299,24 +311,19 @@ elements.fileInput.addEventListener('change', async (e) => {
 elements.applyBtn.addEventListener('click', async () => {
     if (!currentToolKey) return alert("Select a tool first!");
 
+    // 1. Gather RAW values
     const options = {};
     window.EditorConfig.tools[currentToolKey].options.forEach(opt => {
         const el = document.getElementById(opt.id);
         if (el) {
             if (el.type === 'checkbox') {
                 options[opt.id] = el.checked;
-            }
-            else if (el.type === 'color') {
+            } else if (el.type === 'color') {
                 const hex = el.value;
-                options['r'] = parseInt(hex.slice(1, 3), 16) / 255;
-                options['g'] = parseInt(hex.slice(3, 5), 16) / 255;
-                options['b'] = parseInt(hex.slice(5, 7), 16) / 255;
                 options[opt.id] = hex;
-            }
-            else if (opt.id === 'text') {
+            } else if (opt.id === 'text') {
                 options[opt.id] = el.value;
-            }
-            else {
+            } else {
                 options[opt.id] = isNaN(el.value) || el.value === "" ? el.value : parseFloat(el.value);
             }
         }
@@ -329,76 +336,77 @@ elements.applyBtn.addEventListener('click', async () => {
 
     let finalOptions = JSON.parse(JSON.stringify(options));
 
-    // 3. Handle Scaling for BOTH Watermark, Image Overlay, and Crop
-    if (['video_watermark', 'video_crop', 'video_image_watermark'].includes(currentToolKey)) {
+    // 2. Precise Coordinate Mapping
+    const coordinateTools = ['video_watermark', 'video_crop', 'video_image_watermark'];
+    if (coordinateTools.includes(currentToolKey)) {
         const v = elements.videoPlayer;
         const box = document.getElementById('visual-crop-box');
-        const displayWidth = v.clientWidth || v.offsetWidth;
 
-        // --- DEBUG ---
-        console.log("TOOL KEY:", currentToolKey);
-        console.log("BOX DIMENSIONS:", {
-            offsetLeft: box.offsetLeft,
-            offsetTop: box.offsetTop,
-            offsetWidth: box.offsetWidth
-        });
-        // ---------------------------
+        // Use getBoundingClientRect to get absolute screen positions
+        const vRect = v.getBoundingClientRect();
+        const bRect = box.getBoundingClientRect();
 
-        if (displayWidth === 0 || !v.videoWidth) {
+        // Calculate position relative ONLY to the video player edges
+        const relativeX = bRect.left - vRect.left;
+        const relativeY = bRect.top - vRect.top;
+
+        if (!v.videoWidth || v.clientWidth === 0) {
             return alert("Video player not ready.");
         }
 
-        const scaleFactorX = v.videoWidth / displayWidth;
+        // Conversion factors (Actual Resolution / Display Size)
+        const scaleFactorX = v.videoWidth / v.clientWidth;
         const scaleFactorY = v.videoHeight / v.clientHeight;
 
-        const x = Math.round(box.offsetLeft * scaleFactorX);
-        const y = Math.round(box.offsetTop * scaleFactorY);
+        // Map browser pixels to real video pixels
+        const x = Math.round(relativeX * scaleFactorX);
+        const y = Math.round(relativeY * scaleFactorY);
         const w = Math.round(box.offsetWidth * scaleFactorX);
         const h = Math.round(box.offsetHeight * scaleFactorY);
 
+        console.log(`[${currentToolKey}] Mapping: Browser(${relativeX}, ${relativeY}) -> Video(${x}, ${y})`);
+
         if (currentToolKey === 'video_image_watermark' || currentToolKey === 'video_watermark') {
+            // This 'box' key triggers the custom positioning in Python
             finalOptions.box = [x, y, x + w, y + h];
         }
 
         if (currentToolKey === 'video_crop') {
-            finalOptions.x = makeEven(x);
-            finalOptions.y = makeEven(y);
+            finalOptions.x = Math.max(0, makeEven(x));
+            finalOptions.y = Math.max(0, makeEven(y));
             finalOptions.width = makeEven(w);
             finalOptions.height = makeEven(h);
         }
     }
 
+    // 3. UI Feedback
     elements.overlay.style.display = 'flex';
     if (elements.progressBar) elements.progressBar.style.width = '0%';
-    elements.statusText.innerText = "Applying Effect...";
+    elements.statusText.innerText = "Processing Video...";
 
+    // 4. Send Data
     const formData = new FormData();
     formData.append('working_file_path', workingFile);
     formData.append('current_preview_path', previewFile);
     formData.append('tool_key', currentToolKey);
-
     formData.append('options', JSON.stringify(finalOptions));
 
     try {
         const res = await fetch(window.EditorConfig.endpoints.preview, {
             method: 'POST',
             body: formData,
-            headers: {
-                'X-CSRFToken': window.EditorConfig.csrfToken
-            }
+            headers: { 'X-CSRFToken': window.EditorConfig.csrfToken }
         });
-
-        if (!res.ok) throw new Error("Server responded with an error.");
 
         const data = await res.json();
         if (data.success) {
             startPolling(data.task_id);
         } else {
-            throw new Error(data.error || "Unknown error occurred.");
+            throw new Error(data.error || "Server error.");
         }
     } catch (err) {
         elements.overlay.style.display = 'none';
-        alert("Error: " + err.message);
+        alert(err.message);
     }
 });
 
@@ -562,7 +570,7 @@ window.previewWatermarkImage = function(input) {
 
             // Put image inside the visual overlay box
             const textTarget = document.getElementById('watermark-text-content');
-            textTarget.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:contain;">`;
+            textTarget.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:contain; pointer-events:none;">`;
             textTarget.style.background = "transparent";
             textTarget.style.textShadow = "none";
         };
@@ -638,6 +646,21 @@ window.handleWatermarkUpload = async function(input, hiddenPathId) {
         }
     } catch (err) {
         console.error("Upload failed", err);
+    }
+};
+
+window.updateOpacityPreview = function() {
+    const opacitySlider = document.getElementById('opacity');
+    const visualBoxContent = document.getElementById('watermark-text-content');
+
+    if (opacitySlider && visualBoxContent) {
+        const val = opacitySlider.value;
+        // Apply the opacity to the container holding the logo image
+        visualBoxContent.style.opacity = val;
+
+        // Optional: Update the badge text if it exists
+        const badge = document.getElementById('val-opacity');
+        if (badge) badge.innerText = val;
     }
 };
 
