@@ -320,6 +320,9 @@ elements.applyBtn.addEventListener('click', async () => {
                 options[opt.id] = el.checked;
             } else if (el.type === 'color') {
                 const hex = el.value;
+                options['r'] = parseInt(hex.slice(1, 3), 16) / 255;
+                options['g'] = parseInt(hex.slice(3, 5), 16) / 255;
+                options['b'] = parseInt(hex.slice(5, 7), 16) / 255;
                 options[opt.id] = hex;
             } else if (opt.id === 'text') {
                 options[opt.id] = el.value;
