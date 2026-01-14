@@ -468,7 +468,7 @@ EDITOR_TOOLS = {
                 "id": "text",
                 "label": "Watermark Text",
                 "type": "text",
-                "default": "Copyright 2026",
+                "default": "DNICK 2026",
             },
             {
                 "id": "font_size",
@@ -483,51 +483,109 @@ EDITOR_TOOLS = {
                 "label": "Text Color",
                 "type": "color",
                 "default": "#FFFFFF",
-            }
+            },
+            {
+                "id": "font_name",
+                "label": "Font Family",
+                "type": "font-carousel",
+                "default": "arial",
+                "fonts": [
+                    {"value": "arial", "label": "Arial"},
+                    {"value": "times_new_roman", "label": "Times New Roman"},
+                    {"value": "georgia", "label": "Georgia"},
+                    {"value": "courier_new", "label": "Courier New"},
+                    {"value": "verdana", "label": "Verdana"},
+                    {"value": "tahoma", "label": "Tahoma"},
+                    {"value": "trebuchet_ms", "label": "Trebuchet MS"},
+                    {"value": "impact", "label": "Impact"},
+                    {"value": "comic_sans", "label": "Comic Sans"},
+
+                ]
+            },
+            {
+                "id": "stroke_width",
+                "label": "Outline Width",
+                "type": "number",
+                "min": 0,
+                "max": 10,
+                "default": 0,
+            },
+            {
+                "id": "rect",
+                "label": "Background Box",
+                "type": "checkbox",
+                "default": False,
+            },
         ]
     },
-    "video_image_overlay": {
-        "name": "Video Logo Overlay",
+    "video_image_watermark": {
+        "name": "Image Watermark",
         "editor_class": VideoImageWatermarkEditor,
         "options": [
             {
-                "id": "image_path",
-                "label": "Select Logo (Path)",
-                "type": "text",
-                "default": "",
+                "id": "overlay_file",
+                "label": "Upload PNG Image",
+                "type": "file",
+                "accept": ".png",
+                "default": None,
             },
             {
                 "id": "opacity",
-                "label": "Opacity",
+                "label": "Transparency/Opacity",
                 "type": "slider",
                 "min": 0.0,
                 "max": 1.0,
-                "step": 0.1,
+                "step": 0.01,
                 "default": 1.0,
             },
             {
-                "id": "scale",
-                "label": "Scale Factor",
-                "type": "slider",
-                "min": 0.1,
-                "max": 2.0,
-                "step": 0.1,
-                "default": 1.0,
+                "id": "opacity_presets",
+                "label": "Quick Opacity Presets",
+                "type": "opacity-button-group",
+                "buttons": [
+                    {"value": 0.25, "label": "25%"},
+                    {"value": 0.5, "label": "50%"},
+                    {"value": 0.75, "label": "75%"},
+                    {"value": 1.0, "label": "100%"},
+                ]
             },
             {
                 "id": "position_presets",
-                "label": "Position",
-                "type": "select",
-                "choices": [
+                "label": "Position Presets",
+                "type": "position-button-group",
+                "buttons": [
                     {"value": "center", "label": "Center"},
                     {"value": "top-left", "label": "Top Left"},
                     {"value": "top-right", "label": "Top Right"},
                     {"value": "bottom-left", "label": "Bottom Left"},
                     {"value": "bottom-right", "label": "Bottom Right"},
-                ],
-                "default": "bottom-right"
-            }
+                ]
+            },
+            {
+                "id": "x",
+                "label": "X Position",
+                "type": "hidden",
+                "default": 0,
+            },
+            {
+                "id": "y",
+                "label": "Y Position",
+                "type": "hidden",
+                "default": 0,
+            },
+            {
+                "id": "scale",
+                "label": "Scale",
+                "type": "hidden",
+                "default": 1.0,
+            },
+            {
+                "id": "overlay_path",
+                "label": "Overlay Path",
+                "type": "hidden",
+                "default": "",
+            },
         ]
-    }
+    },
 
 }
