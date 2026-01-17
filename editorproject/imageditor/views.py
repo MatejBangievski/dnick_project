@@ -45,6 +45,9 @@ AI_EDITED_IMAGE_DIR = 'temp_edited_images'  # Store AI-generated images in temp 
 # ... (Cleanup Logic, atexit.register, setup_temp_dir, generate_temp_file_path, parse_options remain unchanged)
 # ... (All utility functions remain the same as the previous response)
 
+def home(request):
+    return render(request, 'imageditor/homepage.html')
+
 def cleanup_temp_images():
     # ... (unchanged)
     if hasattr(settings, 'MEDIA_ROOT') and settings.MEDIA_ROOT:

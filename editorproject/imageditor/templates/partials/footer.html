@@ -1,0 +1,120 @@
+<footer class="footer-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <a class="footer-brand" href="{% url 'home' %}">
+                    <span class="text-gradient">Media</span> Studio
+                </a>
+                <p class="mt-3 text-light opacity-50">
+                    A simple, powerful way to edit your media online.
+                    No installation, no hassle. Powered by modern AI processing.
+                </p>
+            </div>
+
+            <div class="col-lg-2 col-md-6 ms-auto">
+                <h6 class="footer-heading">Tools</h6>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="{% url 'editor_page' %}">Image Editor</a></li>
+                    <li><a href="{% url 'video_editor_page' %}">Video Editor</a></li>
+                    <li><a href="{% url 'ai_editor_page' %}">AI-Image Editor</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <h6 class="footer-heading">Resources</h6>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="#faq-section">Help Center</a></li>
+                    <li><a href="#how-it-works">Tutorials</a></li>
+                    <li><a href="#">Blog</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <h6 class="footer-heading">Company</h6>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <hr class="mt-5 mb-4 border-white opacity-10">
+
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center text-md-start">
+                <p class="copyright-text mb-0">&copy; 2026 Image & Video Studio. All rights reserved.</p>
+            </div>
+            <div class="col-md-6 text-center text-md-end">
+                <div class="finki-credit d-inline-block">
+                    <i class="bi bi-mortarboard-fill me-2 text-info"></i>
+                    <span>DNICK, FINKI</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<style>
+    .footer-section {
+        background-color: #0b0e14; /* Matches the body background */
+        padding: 80px 0 40px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .footer-brand {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #ffffff;
+        text-decoration: none;
+    }
+
+    .text-gradient {
+        background: linear-gradient(90deg, #00f2fe 0%, #4facfe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .footer-heading {
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1.5px;
+        margin-bottom: 25px;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .footer-links li {
+        margin-bottom: 12px;
+    }
+
+    .footer-links a {
+        color: rgba(255, 255, 255, 0.5);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+
+    .footer-links a:hover {
+        color: #4facfe; /* Neon Blue Hover */
+        padding-left: 5px; /* Subtle slide effect */
+    }
+
+    .copyright-text {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.85rem;
+    }
+
+    .finki-credit {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+        .footer-section { padding: 50px 0 30px; }
+        .footer-heading { margin-top: 25px; }
+    }
+</style>
