@@ -5,14 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Editor</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <style>
-        /* --- CORE LAYOUT --- */
-        body { background-color: #f8f9fa; height: 100vh; overflow: hidden; margin: 0; }
-        .main-container { height: 100vh; display: flex; }
+/* --- CORE STUDIO LAYOUT --- */
+        body {
+            background-color: #0b0e14;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .main-container {
+            flex-grow: 1;
+            display: flex;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #161b22 0%, #0b0e14 100%);
+        }
 
         #processing-overlay {
         position: absolute;
@@ -29,52 +43,65 @@
         color: white;
         }
 
+        /* --- WORKSPACE & VIDEO STAGE --- */
         .video-workspace {
             flex-grow: 1;
-            background-color: #1a1a1a;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             overflow: hidden;
-            padding: 20px;
+            padding: 40px;
+        }
+
+        #preview-video {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(79, 172, 254, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         #video-wrapper {
             position: relative;
             display: none;
-            align-items: center;
-            justify-content: center;
             max-width: 100%;
             max-height: 100%;
+            box-shadow: 0 0 0 1px #2a2a2e, 0 20px 50px rgba(0,0,0,0.9);
+            border-radius: 4px;
         }
 
-        #preview-video {
-            max-width: 100%;
-            max-height: calc(100vh - 40px);
-            width: auto;
-            height: auto;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            display: none;
-        }
+        /*#preview-video {*/
+        /*    max-width: 100%;*/
+        /*    max-height: 85vh;*/
+        /*    display: block;*/
+        /*    background: #000;*/
+        /*}*/
 
+        /* --- SIDEBAR DESIGN --- */
         .settings-sidebar {
-            width: 380px;
-            min-width: 380px; /
-            flex-shrink: 0;
-            background: white;
-            border-left: 1px solid #dee2e6;
+            width: 400px;
+            min-width: 400px;
+            background: rgba(15, 18, 24, 0.95);
+            backdrop-filter: blur(15px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
             z-index: 100;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .scrollable-content {
             flex-grow: 1;
             overflow-y: auto;
-            padding: 1.5rem;
+            padding: 20px;
         }
-
 
         .form-range::-webkit-slider-runnable-track {
             background: #dee2e6;
@@ -85,110 +112,127 @@
             margin-top: -5px;
         }
 
-        /* Tool Setting Groups */
-        .tool-option-group {
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 15px;
-        }
-
-        /* --- FONT CAROUSEL (PRO STYLE) --- */
-        .font-carousel-container {
-            width: 100%;
-            background: #f1f3f5;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 1.5rem;
-            border: 1px solid #e9ecef;
-        }
-
-
-        #tool-settings-area {
-            overflow-x: hidden;
-            width: 100%;
-        }
-
-        .font-carousel {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            gap: 10px;
-            padding-bottom: 10px;
-            width: 100%;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .font-option {
-            flex: 0 0 80px;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .font-preview-box {
-            width: 100%;
-            height: 60px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8f9fa;
-        }
-
-        /* Custom Scrollbar */
-        .font-carousel::-webkit-scrollbar { height: 6px; }
-        .font-carousel::-webkit-scrollbar-track { background: #dee2e6; border-radius: 10px; }
-        .font-carousel::-webkit-scrollbar-thumb { background: #6c757d; border-radius: 10px; }
-
-        .font-option {
-            flex: 0 0 90px;
-            text-align: center;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        .font-option:hover { transform: translateY(-3px); }
-
-        .font-preview-box {
-            width: 90px;
-            height: 90px;
-            background: white;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* --- TOOL BUTTONS --- */
+        .list-group-item-action {
+            background: #242427 !important;
+            border: 1px solid #333338 !important;
+            color: #a1a1aa !important;
             margin-bottom: 8px;
+            border-radius: 6px !important;
+            padding: 12px 16px !important;
+            font-weight: 500;
             transition: all 0.2s ease;
-            overflow: hidden;
         }
 
-        .font-preview-box img {
-            width: 80%;
-            height: 80%;
-            object-fit: contain;
+        .list-group-item-action:hover {
+            background: #2d2d31 !important;
+            color: #fff !important;
+            border-color: #4b4b52 !important;
         }
 
-        .font-option.selected .font-preview-box {
-            border-color: #0d6efd; /* Bootstrap Primary */
-            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
-            background-color: #f8f9ff;
+        .list-group-item-action i {
+            color: #3b82f6; /* Accent color for icons */
         }
 
-        .font-label {
-            font-size: 11px;
-            font-weight: 700;
-            color: #6c757d;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        /*#tool-settings-area {*/
+        /*    background: #0e0e10;*/
+        /*    border: 1px solid #2a2a2e;*/
+        /*    border-radius: 8px;*/
+        /*    padding: 1.25rem;*/
+        /*    margin-top: 10px;*/
+        /*}*/
 
-        .font-option.selected .font-label { color: #0d6efd; }
+.tool-btn {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #e0e0e0 !important;
+        border-radius: 12px !important;
+        margin-bottom: 10px;
+        transition: all 0.3s ease !important;
+        padding: 12px 15px !important;
+    }
+
+    .tool-btn:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-color: #4facfe !important;
+        transform: translateX(5px);
+    }
+
+    .tool-btn.active {
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%) !important;
+        color: white !important;
+        border: none !important;
+        box-shadow: 0 0 15px rgba(79, 172, 254, 0.4);
+    }
+
+    /* --- SETTINGS AREA --- */
+#tool-settings-area {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+.upload-placeholder {
+        border: 2px dashed rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 60px;
+        border-radius: 30px;
+        transition: 0.3s;
+        cursor: pointer;
+        text-align: center;
+    }
+
+    .upload-placeholder:hover {
+        border-color: #4facfe;
+        background: rgba(79, 172, 254, 0.05);
+        color: #4facfe;
+    }
+
+    /* --- BUTTONS --- */
+    .btn-action {
+        border-radius: 12px;
+        font-weight: 700;
+        padding: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.85rem;
+    }
+
+    .btn-apply {
+        background: linear-gradient(90deg, #00f2fe, #4facfe);
+        border: none;
+        color: white;
+    }
+
+    .btn-download {
+        background: #ffffff;
+        color: #0b0e14;
+        border: none;
+    }
+
+    .btn-download:hover {
+        background: #e0e0e0;
+    }
+
+    /* --- PROGRESS OVERLAY --- */
+    #processing-overlay {
+        background: rgba(11, 14, 20, 0.9);
+        backdrop-filter: blur(5px);
+    }
+
+    .progress {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 50px;
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg, #4facfe, #00f2fe);
+    }
+
+    /* --- CUSTOM SCROLLBAR --- */
+    .scrollable-content::-webkit-scrollbar { width: 6px; }
+    .scrollable-content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+        /* --- TEXT BOX & CROP OVERLAYS (STRICTLY PRESERVED) --- */
 
         .crop-box-overlay, .text-box-overlay {
             position: absolute;
@@ -196,16 +240,22 @@
             box-sizing: border-box;
         }
 
-        /* Specific to Crop */
         .crop-box-overlay {
-            border: 2px solid #00ff00;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
+            /*z-index: 10;*/
         }
 
         .text-box-overlay {
-            border: 2px dashed #0d6efd;
-            background: rgba(13, 110, 253, 0.1);
+            border: 2px dashed #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
             cursor: move;
+            /*z-index: 11;*/
+        }
+
+        .crop-box-overlay .text-box-content {
+        visibility: hidden !important;
+        opacity: 0 !important;
         }
 
         .text-box-content {
@@ -223,23 +273,129 @@
             pointer-events: none;
         }
 
+
+
+        /* --- RESIZE HANDLES --- */
         .resize-handle {
             position: absolute;
             width: 12px;
             height: 12px;
-            background: white;
-            border: 2px solid #0d6efd;
-            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #3b82f6;
+            border-radius: 2px;
             z-index: 11;
         }
+
         .nw { top: -6px; left: -6px; cursor: nw-resize; }
         .ne { top: -6px; right: -6px; cursor: ne-resize; }
         .sw { bottom: -6px; left: -6px; cursor: sw-resize; }
         .se { bottom: -6px; right: -6px; cursor: se-resize; }
+
+        /* --- FONT CAROUSEL (STRICTLY PRESERVED) --- */
+        .font-carousel-container {
+            width: 100%;
+            background: #242427;
+            border: 1px solid #333338;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .font-carousel {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            gap: 10px;
+            padding-bottom: 10px;
+            width: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .font-option {
+            flex: 0 0 90px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .font-option:hover { transform: translateY(-3px); }
+
+        .font-preview-box {
+            width: 90px;
+            height: 90px;
+            background: #0e0e10;
+            border: 2px solid #333338;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+
+        .font-preview-box img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+
+        .font-option.selected .font-preview-box {
+            border-color: #3b82f6;
+            background-color: #1e1e24;
+        }
+
+        .font-carousel::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .font-carousel::-webkit-scrollbar-track {
+            background: #dee2e6;
+            border-radius: 10px;
+        }
+
+        .font-carousel::-webkit-scrollbar-thumb {
+            background: #6c757d;
+            border-radius: 10px;
+        }
+
+
+
+        .font-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #71717a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .font-option.selected .font-label {
+            color: #3b82f6;
+        }
+
+        /* --- ACTION BUTTONS --- */
+        .btn-success { background-color: #10b981 !important; border: none !important; }
+        .btn-primary { background-color: #3b82f6 !important; border: none !important; }
+        .btn-outline-danger { color: #f87171 !important; border-color: #452a2a !important; }
+
+        /* --- UPLOAD & PROCESSING --- */
+        .upload-placeholder {
+            border: 2px dashed #333338;
+            background: #18181b;
+            padding: 60px;
+            border-radius: 12px;
+        }
+
+        #processing-overlay {
+            background: rgba(10, 10, 11, 0.98);
+        }
     </style>
 </head>
 <body>
-
+{% include 'partials/navbar.html' %}
 <div class="main-container">
     <div class="video-workspace">
         <div id="processing-overlay">
@@ -279,47 +435,39 @@
     </div>
 
     <div class="settings-sidebar">
-        <div class="p-3 border-bottom bg-light">
-            <h5 class="mb-0"><i class="bi bi-film me-2"></i>Video Editor</h5>
+        <div class="sidebar-header">
+            <h5 class="mb-0 text-white"><i class="bi bi-cpu-fill me-2 text-info"></i>AI Workspace</h5>
         </div>
-
         <div class="scrollable-content">
-            <label class="form-label fw-bold mb-3">Editing Tools</label>
+            <label class="form-label fw-bold mb-3 text-secondary small text-uppercase" style="letter-spacing: 1px;">Editing Tools</label>
             <div class="list-group mb-4">
                 {% for key, tool in template_tools.items %}
                 <button class="list-group-item list-group-item-action tool-btn" data-tool-key="{{ key }}">
-                    <i class="bi bi-gear-wide-connected me-2"></i> {{ tool.name }}
+                    <i class="bi bi-stars me-2"></i> {{ tool.name }}
                 </button>
                 {% endfor %}
             </div>
-
-            <div id="tool-settings-area" class="border p-3 rounded bg-light">
+            <div id="tool-settings-area" >
                 <p class="text-muted small mb-0 text-center">Select a tool above to begin editing.</p>
             </div>
         </div>
-
-        <div class="p-3 border-top bg-light">
-            <button id="apply-btn" class="btn btn-success w-100 mb-2 py-2 fw-bold" disabled>
-                <i class="bi bi-play-circle me-1"></i> Preview Effect
+        <div class="p-3 border-top border-secondary">
+            <button id="apply-btn" class="btn btn-action btn-apply w-100 mb-2" disabled>
+                <i class="bi bi-magic me-1"></i> Preview Effect
             </button>
-
             <button id="commit-btn" class="btn btn-outline-success w-100 mb-2 py-2 fw-bold d-none">
                 <i class="bi bi-check-lg me-1"></i> Save Changes
             </button>
-
-            <button id="reset-btn" class="btn btn-outline-danger w-100 mb-2 py-2 fw-bold" disabled>
+            <button id="reset-btn" class="btn btn-action btn-outline-light w-100 mb-2 opacity-50" disabled>
                 <i class="bi bi-arrow-counterclockwise me-1"></i> Reset to Original
             </button>
-
             <hr class="my-2">
-
-            <button id="download-btn" class="btn btn-primary w-100 py-2 fw-bold" disabled>
+            <button id="download-btn" class="btn btn-action btn-download w-100" disabled>
                 <i class="bi bi-download me-1"></i> Download Result
             </button>
         </div>
     </div>
 </div>
-
 <script>
     window.EditorConfig = {
         csrfToken: '{{ csrf_token }}',
@@ -334,8 +482,7 @@
         tools: JSON.parse('{{ js_editor_tools|safe }}')
     };
 </script>
-
 <script src="{% static 'imageditor/js/video_editor.js' %}"></script>
-
 </body>
+
 </html>

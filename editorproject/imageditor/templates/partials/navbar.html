@@ -1,0 +1,41 @@
+<nav class="navbar navbar-expand-lg fixed-top custom-nav">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{% url 'home' %}" style="color: white;">
+            <span class="text-gradient" >Media</span> Studio
+        </a>
+        <div class="collapse navbar-collapse" id="navbarNav" >
+            <ul class="navbar-nav ms-auto align-items-center" >
+                <li class="nav-item"><a class="nav-link" href="{% url 'editor_page' %}" style="color: white">Image Editor</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'video_editor_page' %}" style="color: white">Video Editor</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'ai_editor_page' %}" style="color: white">AI-Image Editor</a></li>
+                <li class="nav-item ms-lg-3">
+                    <a class="btn-glow" href="{% url 'home' %}">Home</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .custom-nav {
+        background: rgba(15, 15, 20, 0.8);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 15px 0;
+    }
+    .text-gradient {
+        background: linear-gradient(90deg, #00f2fe 0%, #4facfe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .btn-glow {
+        background: #4facfe;
+        color: white;
+        padding: 8px 24px;
+        border-radius: 50px;
+        text-decoration: none;
+        box-shadow: 0 0 15px rgba(79, 172, 254, 0.4);
+        transition: 0.3s;
+    }
+    .btn-glow:hover { transform: scale(1.05); color: white; }
+</style>

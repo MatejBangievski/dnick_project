@@ -1,0 +1,353 @@
+{% extends 'imageditor/base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-3 fw-bold mb-3 text-white">All-in-one <span class="text-gradient">Media</span> Tools</h1>
+        <p class="lead mb-5 text-light opacity-75">The easiest way to edit your photos and videos online. No installation
+            required.</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <div class="row g-4 justify-content-center">
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="{% url 'editor_page' %}" class="tool-card-glass">
+                <div class="icon-box image-bg mb-3">
+                    <i class="bi bi-image-fill"></i>
+                </div>
+                <h5 class="card-title text-white">Image Editor</h5>
+                <p class="small opacity-50 text-white m-0">Filters and overlays</p>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="{% url 'video_editor_page' %}" class="tool-card-glass">
+                <div class="icon-box video-bg mb-3">
+                    <i class="bi bi-play-btn-fill"></i>
+                </div>
+                <h5 class="card-title text-white">Video Editor</h5>
+                <p class="small opacity-50 text-white m-0">Cut, crop, subtitles...</p>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row g-4 text-center">
+        <div class="col-md-4">
+            <div class="feature-card-dark">
+                <div class="feature-icon text-info"><i class="bi bi-layers"></i></div>
+                <h4 class="feature-title text-white"><span class="badge-custom bd-yellow">All-in-One</span> Solution
+                </h4>
+                <p class="feature-text text-light opacity-50">Combine video clips with images, logos, and professional
+                    typography in one place.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card-dark">
+                <div class="feature-icon text-primary"><i class="bi bi-cloud-check"></i></div>
+                <h4 class="feature-title text-white"><span class="badge-custom bd-lavender">Zero-Install</span> Editor
+                </h4>
+                <p class="feature-text text-light opacity-50">Works entirely in your browser. No downloads, faster
+                    processing, and totally secure.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card-dark">
+                <div class="feature-icon text-success"><i class="bi bi-shield-lock"></i></div>
+                <h4 class="feature-title text-white"><span class="badge-custom bd-blue">Files are</span> Protected</h4>
+                <p class="feature-text text-light opacity-50">Privacy is our priority. Files are processed securely and
+                    cleared after your session.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card-dark">
+                <div class="feature-icon text-warning"><i class="bi bi-cpu"></i></div>
+                <h4 class="feature-title text-white"><span class="badge-custom bd-pink">Lightning-Fast</span> Speed</h4>
+                <p class="feature-text text-light opacity-50">Our optimized engine ensures previews and filters render
+                    in real-time.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card-dark">
+                <div class="feature-icon text-danger"><i class="bi bi-file-font"></i></div>
+                <h4 class="feature-title text-white"><span class="badge-custom bd-green">Pro</span> Typography</h4>
+                <p class="feature-text text-light opacity-50">Add stunning subtitles with a curated library of
+                    professional fonts.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card-dark">
+                <div class="feature-icon text-info"><i class="bi bi-pencil"></i></div>
+                <h4 class="feature-title text-white"><span class="badge-custom bd-orange">Intuitive</span> Design</h4>
+                <p class="feature-text text-light opacity-50">Simple enough for beginners but powerful enough for
+                    content creators.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section id="how-it-works" class="how-it-works-dark py-5">
+    <div class="container">
+        <div class="row align-items-start">
+            <div class="col-lg-4 mb-5 mb-lg-0">
+                <div class="sticky-top" style="top: 100px; z-index: 1;">
+                    <div class="help-icon-circle glow-yellow mb-4">
+                        <i class="bi bi-question-lg"></i>
+                    </div>
+                    <h2 class="display-6 fw-bold mb-4 text-white">How to create <br>media online</h2>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="steps-container">
+                    <div class="step-item-dark">
+                        <div class="step-header">
+                            <span class="step-number-glow">STEP 1</span>
+                            <h4 class="step-title text-white">Upload files</h4>
+                        </div>
+                        <div class="step-body">
+                            <p class="text-light opacity-50 ms-md-5 ps-md-4">Upload from any device and take a look at
+                                the tools we offer.</p>
+                        </div>
+                    </div>
+                    <div class="step-item-dark">
+                        <div class="step-header">
+                            <span class="step-number-glow">STEP 2</span>
+                            <h4 class="step-title text-white">Edit your media</h4>
+                        </div>
+                        <div class="step-body">
+                            <p class="text-light opacity-50 ms-md-5 ps-md-4">Trim, crop, or add subtitles. Everything
+                                happens in real-time in your browser.</p>
+                        </div>
+                    </div>
+                    <div class="step-item-dark">
+                        <div class="step-header">
+                            <span class="step-number-glow">STEP 3</span>
+                            <h4 class="step-title text-white">Save the result</h4>
+                        </div>
+                        <div class="step-body">
+                            <p class="text-light opacity-50 ms-md-5 ps-md-4">Hit export and download your high-quality
+                                file instantly.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="faq-section" class="faq-section-dark py-5">
+    <div class="container">
+        <h2 class="text-center fw-bold mb-5 text-white">Frequently Asked Questions</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="accordion accordion-flush" id="faqAccordion">
+                    <div class="accordion-item bg-transparent border-secondary">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                    type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                Which file formats are supported?
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-light opacity-50">
+                                We support MP4, MOV, WEBM, PNG, JPG, and GIF.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item bg-transparent border-secondary">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                    type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                Can I add text overlays?
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-light opacity-50">
+                                Yes! Our Subtitle Tool allows you to drag and drop text anywhere on your video, change
+                                fonts, colors, and sizes, and see changes in real-time before you export.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item bg-transparent border-secondary">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                    type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                What kind of filters (photo/video effects) do you offer?
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-light opacity-50">
+                                Currently, we offer black&white filter, brightness, contrast, color intensity
+                                enhancement, color tint, sepia tone and many more!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    body {
+        background-color: #0b0e14;
+        color: #ffffff;
+        font-family: 'Inter', sans-serif;
+        scroll-behavior: smooth;
+    }
+
+    /* Hero */
+    .hero-section {
+        padding: 100px 0 60px;
+    }
+
+    .text-gradient {
+        background: linear-gradient(90deg, #00f2fe 0%, #4facfe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Tool Cards */
+    .tool-card-glass {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 30px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        text-decoration: none;
+        transition: 0.3s;
+    }
+
+    .tool-card-glass:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: #4facfe;
+        transform: translateY(-8px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Icon Boxes */
+    .icon-box {
+        width: 70px;
+        height: 70px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .video-bg {
+        background: linear-gradient(135deg, #6e8efb, #a777e3);
+    }
+
+    .image-bg {
+        background: linear-gradient(135deg, #43e97b, #38f9d7);
+    }
+
+    /* Feature Cards */
+    .feature-card-dark {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 40px 30px;
+        height: 100%;
+        transition: 0.3s;
+    }
+
+    .feature-card-dark:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+    }
+
+    /* Highlight Badges */
+    .badge-custom {
+        padding: 0 6px;
+        border-radius: 4px;
+    }
+
+    .bd-yellow {
+        background: rgba(255, 243, 205, 0.1);
+        color: #ffd93d;
+    }
+
+    .bd-lavender {
+        background: rgba(235, 181, 247, 0.1);
+        color: #ebb5f7;
+    }
+
+    .bd-blue {
+        background: rgba(207, 226, 255, 0.1);
+        color: #cfe2ff;
+    }
+
+    .bd-pink {
+        background: rgba(247, 181, 240, 0.1);
+        color: #f7b5f0;
+    }
+
+    .bd-green {
+        background: rgba(209, 231, 221, 0.1);
+        color: #d1e7dd;
+    }
+
+    .bd-orange {
+        background: rgba(247, 210, 181, 0.1);
+        color: #f7d2b5;
+    }
+
+    /* How it works */
+    .how-it-works-dark {
+        background-color: #0f1218;
+    }
+
+    .help-icon-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: white;
+    }
+
+    .glow-yellow {
+        background: #ffd93d;
+        box-shadow: 0 0 20px rgba(255, 217, 61, 0.4);
+    }
+
+    .step-item-dark {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 20px;
+    }
+
+    .step-number-glow {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #00f2fe;
+        text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        margin-right: 30px;
+        min-width: 60px;
+    }
+
+    /* FAQ Inversion */
+    .accordion-button::after {
+        filter: invert(1);
+    }
+</style>
+{% endblock %}
