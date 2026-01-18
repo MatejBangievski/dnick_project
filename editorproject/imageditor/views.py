@@ -5,8 +5,9 @@ import uuid
 import shutil
 import atexit
 from django.conf import settings
+from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse, FileResponse, Http404
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.core.files.storage import default_storage
@@ -15,6 +16,11 @@ from PIL import Image
 from copy import deepcopy
 from celery.result import AsyncResult
 from .tasks import process_video_task
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
+from django.contrib import messages
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from .forms import UserRegisterForm, UserUpdateForm
 
 # Google Gemini imports for AI image generation
 try:
@@ -207,6 +213,8 @@ def get_image_dimensions(file_path):
 
 # --- Django Views ---
 
+@require_http_methods(["GET"])
+@login_required
 def editor_page(request):
     """
     Renders the main image editor page.
@@ -345,7 +353,7 @@ def reset_image_state(request):
 def reset_preview_to_working(request):
     """
     Copies the committed working file into the preview file, overwriting it.
-    This is used when the user switches tools and we want to discard unsaved preview-only changes.
+    This is used when the user switches tools, and we want to discard unsaved preview-only changes.
 
     OPTIMIZATION: Reuses existing preview path instead of creating a new one to prevent file duplication.
 
@@ -603,6 +611,8 @@ def download_image(request):
 #                               VIDEO PROCESSING METHODS
 # ==========================================================================================
 
+@require_http_methods(["GET"])
+@login_required
 def video_editor_page(request):
     """
     Renders the dedicated video editor page.
@@ -812,6 +822,8 @@ def initial_video_upload(request):
 # AI EDITOR VIEWS (Gemini 2.5 Flash Integration)
 # ============================================
 
+@require_http_methods(["GET"])
+@login_required
 def ai_editor_page(request):
     """
     Renders the AI image generation page with chatbot interface.
@@ -943,4 +955,77 @@ def generate_ai_image(request):
             "success": False,
             "error": f"AI generation failed: {str(e)}"
         }, status=500)
+
+
+def register(request):
+    if request.method == "POST":
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Registration successful.")
+            return redirect("home")
+        messages.error(request, "Unsuccessful registration. Invalid information.")
+    else:
+        form = UserRegisterForm()
+    return render(request, "imageditor/register.html", {"form": form})
+
+
+def login_request(request):
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.info(request, f"You are now logged in as {username}.")
+                return redirect("home")
+            else:
+                messages.error(request, "Invalid username or password.")
+        else:
+            messages.error(request, "Invalid username or password.")
+    form = AuthenticationForm()
+    return render(request, "imageditor/login.html", {"form": form})
+
+
+def logout_request(request):
+    logout(request)
+    messages.info(request, "You have successfully logged out.")
+    return redirect("home")
+
+
+@login_required
+def profile(request):
+    return render(request, 'imageditor/profile.html')
+
+
+@login_required
+def profile_edit(request):
+    if request.method == 'POST':
+        form = UserUpdateForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated!')
+            return redirect('profile')
+    else:
+        form = UserUpdateForm(instance=request.user)
+    return render(request, 'imageditor/profile_edit.html', {'form': form})
+
+
+@login_required
+def password_change(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important!
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'imageditor/password_change.html', {'form': form})
 

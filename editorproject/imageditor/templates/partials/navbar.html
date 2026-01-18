@@ -5,12 +5,32 @@
         </a>
         <div class="collapse navbar-collapse" id="navbarNav" >
             <ul class="navbar-nav ms-auto align-items-center" >
-                <li class="nav-item"><a class="nav-link" href="{% url 'editor_page' %}" style="color: white">Image Editor</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'video_editor_page' %}" style="color: white">Video Editor</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'ai_editor_page' %}" style="color: white">AI-Image Editor</a></li>
-                <li class="nav-item ms-lg-3">
-                    <a class="btn-glow" href="{% url 'home' %}">Home</a>
-                </li>
+                {% if user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'editor_page' %}" style="color: white">Image Editor</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'video_editor_page' %}" style="color: white">Video Editor</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'ai_editor_page' %}" style="color: white">AI-Image Editor</a></li>
+
+                    <li class="nav-item ms-lg-3 dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white">
+                            <span class="me-2">{{ user.username }}</span>
+                            <div class="profile-icon-sm">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item ms-lg-3">
+                        <a class="nav-link" href="{% url 'login' %}" style="color: white">Login</a>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <a class="btn-glow" href="{% url 'register' %}">Register</a>
+                    </li>
+                {% endif %}
             </ul>
         </div>
     </div>
@@ -38,4 +58,26 @@
         transition: 0.3s;
     }
     .btn-glow:hover { transform: scale(1.05); color: white; }
+    .profile-icon-sm {
+        width: 30px;
+        height: 30px;
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.8rem;
+    }
+    .dropdown-menu-dark {
+        background-color: #1f2229;
+        border-color: rgba(255,255,255,0.1);
+    }
+    .dropdown-item {
+        color: #e0e0e0;
+    }
+    .dropdown-item:hover {
+        background-color: rgba(255,255,255,0.1);
+        color: white;
+    }
 </style>

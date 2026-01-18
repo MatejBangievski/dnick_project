@@ -1,0 +1,76 @@
+{% extends "imageditor/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container" style="padding-top: 120px; padding-bottom: 60px;">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card bg-dark text-white border-secondary card-glass">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4 fw-bold">Login</h2>
+                    <form method="POST">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label text-light opacity-75">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in field.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        <div class="d-grid mt-4">
+                            <button class="btn btn-primary btn-lg" type="submit">Sign In</button>
+                        </div>
+                    </form>
+                    <p class="text-center mt-3 text-light opacity-75">
+                        Don't have an account? <a href="{% url 'register' %}" class="text-info text-decoration-none">Register here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background-color: #0b0e14;
+        color: #ffffff;
+        font-family: 'Inter', sans-serif;
+    }
+    /* Styling for form fields rendered by Django */
+    input[type="text"],
+    input[type="password"],
+    input[type="email"] {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        padding: 10px 15px;
+        border-radius: 8px;
+        width: 100%;
+        display: block;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: #4facfe !important;
+        box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+    }
+
+    .card-glass {
+        background: rgba(15, 18, 24, 0.8) !important;
+        backdrop-filter: blur(10px);
+    }
+</style>
+{% endblock %}
