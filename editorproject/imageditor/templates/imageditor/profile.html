@@ -46,6 +46,39 @@
             </div>
         </div>
     </div>
+    <hr class="my-5 border-secondary">
+    <h3 class="mb-4 fw-bold text-center">Your Recent Creations</h3>
+
+    <div class="row">
+        {% for item in recent_items %}
+        <div class="col-md-4 mb-4">
+            <div class="card bg-dark text-white border-secondary h-100 card-glass">
+                {% if item.media_type == 'image' %}
+                <img src="{{ item.edited_file.url }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <video class="card-img-top" controls style="max-height: 250px; background: black;">
+                    <source src="{{ item.edited_file.url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                    <p class="small text-secondary mb-3">Edited: {{ item.created_at|date:"M d, Y" }}</p>
+                    <div class="mt-auto">
+                        <a href="{{ item.edited_file.url }}" target="_blank" class="btn btn-sm btn-info w-100">
+                            <i class="bi bi-eye-fill me-1"></i> View Full
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-camera-reels text-secondary display-1"></i>
+            <p class="mt-3 text-secondary">You haven't edited any media yet. Start creating!</p>
+            <a href="{% url 'home' %}" class="btn btn-primary">Go to Editor</a>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
 <style>

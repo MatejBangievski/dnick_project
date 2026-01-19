@@ -21,6 +21,9 @@ from django.contrib.auth import login, authenticate, logout, update_session_auth
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from .forms import UserRegisterForm, UserUpdateForm
+from django.core.files.base import ContentFile
+from .models import UserEdit
+import cloudinary.uploader
 
 # Google Gemini imports for AI image generation
 try:
@@ -483,10 +486,49 @@ def preview_image(request):
         return JsonResponse({"success": False, "error": f"Preview error: {str(e)}"}, status=500)
 
 
+# @csrf_exempt
+# @require_http_methods(["POST"])
+# def process_image(request):
+#     # ... (This function remains UNCHANGED, its purpose is to copy preview to working state)
+#     try:
+#         working_file_path = request.POST.get('working_file_path')
+#         preview_file_path = request.POST.get('preview_file_path')
+#
+#         if not working_file_path or not preview_file_path:
+#             return JsonResponse({'error': 'Missing working or preview path.'}, status=400)
+#
+#         # 1. Read the image data from the current PREVIEW file
+#         full_path_source = default_storage.path(preview_file_path)
+#
+#         # 2. Copy the content of the PREVIEW file into the WORKING COPY file
+#         with default_storage.open(full_path_source, 'rb') as source_file:
+#             content = ContentFile(source_file.read())
+#
+#         # 3. Overwrite the WORKING COPY (Commit the change)
+#         default_storage.delete(working_file_path)
+#         saved_path = default_storage.save(working_file_path, content)
+#
+#         temp_image_url = settings.MEDIA_URL + saved_path
+#
+#         # Get new dimensions after committing (important for crop/resize tools)
+#         new_width, new_height = get_image_dimensions(saved_path)
+#
+#         return JsonResponse({
+#             "success": True,
+#             "temp_image_url": temp_image_url,
+#             "working_file_path": saved_path,
+#             "new_width": new_width,
+#             "new_height": new_height
+#         })
+#
+#     except FileNotFoundError:
+#         return JsonResponse({"success": False, "error": "Image file not found on server."}, status=404)
+#     except Exception as e:
+#         return JsonResponse({"success": False, "error": f"Processing error: {str(e)}"}, status=500)
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def process_image(request):
-    # ... (This function remains UNCHANGED, its purpose is to copy preview to working state)
     try:
         working_file_path = request.POST.get('working_file_path')
         preview_file_path = request.POST.get('preview_file_path')
@@ -494,34 +536,55 @@ def process_image(request):
         if not working_file_path or not preview_file_path:
             return JsonResponse({'error': 'Missing working or preview path.'}, status=400)
 
-        # 1. Read the image data from the current PREVIEW file
+        # 1. Get the content from the preview (the edited version)
         full_path_source = default_storage.path(preview_file_path)
-
-        # 2. Copy the content of the PREVIEW file into the WORKING COPY file
         with default_storage.open(full_path_source, 'rb') as source_file:
-            content = ContentFile(source_file.read())
+            image_content = source_file.read()
 
-        # 3. Overwrite the WORKING COPY (Commit the change)
+        # 2. Update the local working copy for the current session
         default_storage.delete(working_file_path)
-        saved_path = default_storage.save(working_file_path, content)
+        saved_path = default_storage.save(working_file_path, ContentFile(image_content))
 
-        temp_image_url = settings.MEDIA_URL + saved_path
+        # 3. SAVE TO DATABASE & CLOUDINARY (If logged in)
+        if request.user.is_authenticated:
+            try:
+                # 1. Upload directly to Cloudinary first
+                # This returns a dictionary containing the 'secure_url'
+                upload_result = cloudinary.uploader.upload(
+                    ContentFile(image_content),
+                    folder="edits/",
+                    public_id=f"edit_{uuid.uuid4().hex[:8]}"
+                )
 
-        # Get new dimensions after committing (important for crop/resize tools)
+                # 2. Extract the URL from the response
+                cloudinary_url = upload_result.get('secure_url')
+                print(f"DEBUG: Uploaded to Cloudinary: {cloudinary_url}")
+
+                # 3. Create the Database record using the URL string
+                new_edit = UserEdit(
+                    user=request.user,
+                    media_type='image',
+                    edited_file=cloudinary_url  # Save the string URL
+                )
+                new_edit.save()
+
+                print("DEBUG: Successfully saved to DB!")
+            except Exception as e:
+                print(f"DEBUG ERROR: {str(e)}")
+
+        # 4. Return dimensions and local temp URL for immediate editor feedback
         new_width, new_height = get_image_dimensions(saved_path)
 
         return JsonResponse({
             "success": True,
-            "temp_image_url": temp_image_url,
+            "temp_image_url": settings.MEDIA_URL + saved_path,
             "working_file_path": saved_path,
             "new_width": new_width,
             "new_height": new_height
         })
 
-    except FileNotFoundError:
-        return JsonResponse({"success": False, "error": "Image file not found on server."}, status=404)
     except Exception as e:
-        return JsonResponse({"success": False, "error": f"Processing error: {str(e)}"}, status=500)
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 @csrf_exempt
@@ -724,13 +787,41 @@ def download_video(request):
 from moviepy import VideoFileClip
 
 
+# @csrf_exempt
+# @require_http_methods(["POST"])
+# def process_video(request):
+#     """
+#     Finalizes the video changes by copying the transient preview
+#     video into the permanent working copy.
+#     """
+#     try:
+#         working_file_path = request.POST.get('working_file_path')
+#         preview_file_path = request.POST.get('preview_file_path')
+#
+#         if not working_file_path or not preview_file_path:
+#             return JsonResponse({'error': 'Missing working or preview path.'}, status=400)
+#
+#         full_path_source = default_storage.path(preview_file_path)
+#
+#         with default_storage.open(full_path_source, 'rb') as source_file:
+#             content = ContentFile(source_file.read())
+#
+#         if default_storage.exists(working_file_path):
+#             default_storage.delete(working_file_path)
+#
+#         saved_path = default_storage.save(working_file_path, content)
+#
+#         return JsonResponse({
+#             "success": True,
+#             "working_file_path": saved_path,
+#         })
+#
+#     except Exception as e:
+#         return JsonResponse({"success": False, "error": f"Video Commit error: {str(e)}"}, status=500)
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def process_video(request):
-    """
-    Finalizes the video changes by copying the transient preview
-    video into the permanent working copy.
-    """
     try:
         working_file_path = request.POST.get('working_file_path')
         preview_file_path = request.POST.get('preview_file_path')
@@ -738,23 +829,49 @@ def process_video(request):
         if not working_file_path or not preview_file_path:
             return JsonResponse({'error': 'Missing working or preview path.'}, status=400)
 
+        # 1. Get the content from the preview
         full_path_source = default_storage.path(preview_file_path)
-
         with default_storage.open(full_path_source, 'rb') as source_file:
-            content = ContentFile(source_file.read())
+            video_content = source_file.read()
 
+        # 2. Update the local session working copy
         if default_storage.exists(working_file_path):
             default_storage.delete(working_file_path)
+        saved_path = default_storage.save(working_file_path, ContentFile(video_content))
 
-        saved_path = default_storage.save(working_file_path, content)
+        # 3. SAVE TO DATABASE & CLOUDINARY (If logged in)
+        if request.user.is_authenticated:
+            try:
+                # Direct upload to Cloudinary
+                # IMPORTANT: resource_type="video" is required for mp4/mov files
+                upload_result = cloudinary.uploader.upload(
+                    ContentFile(video_content),
+                    folder="edits/",
+                    resource_type="video",
+                    public_id=f"video_{uuid.uuid4().hex[:8]}"
+                )
+
+                # Get the URL string back
+                cloudinary_url = upload_result.get('secure_url')
+
+                # Create the Database record using the URL string
+                new_edit = UserEdit(
+                    user=request.user,
+                    media_type='video',
+                    edited_file=cloudinary_url  # Save the string URL
+                )
+                new_edit.save()
+
+                print(f"DEBUG: Video saved! URL: {cloudinary_url}")
+            except Exception as e:
+                print(f"DEBUG VIDEO ERROR: {str(e)}")
 
         return JsonResponse({
             "success": True,
             "working_file_path": saved_path,
         })
-
     except Exception as e:
-        return JsonResponse({"success": False, "error": f"Video Commit error: {str(e)}"}, status=500)
+        return JsonResponse({"success": False, "error": f"Video processing error: {str(e)}"}, status=500)
 
 
 @csrf_exempt
@@ -998,7 +1115,12 @@ def logout_request(request):
 
 @login_required
 def profile(request):
-    return render(request, 'imageditor/profile.html')
+    recent_items = UserEdit.objects.filter(user=request.user).order_by('-created_at')[:6]
+
+    context = {
+        'recent_items': recent_items
+    }
+    return render(request, 'imageditor/profile.html', context)
 
 
 @login_required
@@ -1028,4 +1150,29 @@ def password_change(request):
     else:
         form = PasswordChangeForm(request.user)
     return render(request, 'imageditor/password_change.html', {'form': form})
+
+
+
+def save_edited_video(request, processed_video_data, filename):
+    """
+    processed_video_data: The binary data of your video
+    filename: e.g., 'cool_edit.mp4'
+    """
+    if request.user.is_authenticated:
+        # 1. Create the database record
+        new_edit = UserEdit(
+            user=request.user,
+            media_type='video'
+        )
+
+        # 2. Attach the file data
+        # This line triggers the automatic upload to Cloudinary
+        new_edit.file.save(
+            filename,
+            ContentFile(processed_video_data),
+            save=True
+        )
+
+        return new_edit
+    return None
 

@@ -12,9 +12,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env_path = os.path.join(BASE_DIR, '.env')
+load_dotenv(dotenv_path=env_path)
 
 
 # Quick-start development settings - unsuitable for production
@@ -38,7 +42,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'imageditor'
+    'imageditor',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 MIDDLEWARE = [
@@ -145,3 +151,28 @@ MESSAGE_TAGS = {
     messages.WARNING: 'warning',
     messages.ERROR: 'danger',
 }
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET')
+}
+# print(f"DEBUG CLOUD NAME: {os.getenv('CLOUDINARY_CLOUD_NAME')}")
+# print(f"DEBUG API KEY: {os.getenv('CLOUDINARY_API_KEY')}")
+
+CLOUDINARY_STORAGE.update({
+    'RESOURCE_TYPE': 'auto',
+})
+
+import cloudinary
+cloudinary.config(
+  cloud_name = CLOUDINARY_STORAGE['CLOUD_NAME'],
+  api_key = CLOUDINARY_STORAGE['API_KEY'],
+  api_secret = CLOUDINARY_STORAGE['API_SECRET'],
+  secure = True
+)
+
+#DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+
+CLOUDINARY_URL = f"cloudinary://{CLOUDINARY_STORAGE['API_KEY']}:{CLOUDINARY_STORAGE['API_SECRET']}@{CLOUDINARY_STORAGE['CLOUD_NAME']}"
