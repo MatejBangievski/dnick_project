@@ -11,3 +11,8 @@ There might still be a weird edge case with the text placement where it's offset
 notes:
 for AI Images you need pip install google-genai
 and export GOOGLE_API_KEY=key
+
+for Cloudinary you need pip install cloudinary
+and CLOUDINARY_CLOUD_NAME=cloud_name
+   CLOUDINARY_API_KEY=key
+   CLOUDINARY_API_SECRET=secret
