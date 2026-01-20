@@ -598,6 +598,24 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 .apply-btn:hover:not(:disabled) { background: #157347; }
 
+.save-to-profile-btn {
+    background: #0d6efd;
+    color: white;
+    border: none;
+    transition: background 0.2s ease;
+}
+
+.save-to-profile-btn:hover:not(:disabled) {
+    background: #0b5ed7;
+}
+
+.save-to-profile-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.btn-success { background-color: #10b981 !important; border: none !important; }
+
 .reset-btn {
     background: rgba(255, 255, 255, 0.1);
     color: #e0e0e0;

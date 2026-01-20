@@ -463,6 +463,10 @@ elements.commitBtn.addEventListener('click', async () => {
         workingFile = data.working_file_path;
         elements.commitBtn.classList.add('d-none');
         alert("Effect stacked!");
+        document.getElementById('save-to-profile-btn').disabled = false;
+        // Optionally reset button text if it was changed to "Saved" previously
+        const saveBtn = document.getElementById('save-to-profile-btn');
+        saveBtn.innerHTML = `<i class="bi bi-cloud-upload-fill me-1"></i> Save to Profile`;
     }
 });
 
@@ -480,6 +484,42 @@ elements.resetBtn.addEventListener('click', function() {
 
 elements.downloadBtn.addEventListener('click', () => {
     window.location.href = `${window.EditorConfig.endpoints.download}?file_path=${previewFile}`;
+});
+
+// Logic for Saving to Cloudinary/Profile
+document.getElementById('save-to-profile-btn').addEventListener('click', async function() {
+    const btn = this;
+    const originalContent = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Saving...`;
+
+    const formData = new FormData();
+    // 'workingFile' is your state variable tracking the current video path
+    formData.append('working_file_path', workingFile);
+    formData.append('media_type', 'video');
+
+    try {
+        const res = await fetch(window.EditorConfig.endpoints.saveToProfile, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': window.EditorConfig.csrfToken }
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Saved!`;
+            btn.classList.replace('btn-save-profile', 'btn-success');
+        } else {
+            alert("Error: " + data.error);
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+        console.error(err);
+    }
 });
 
 // 8. MOUSE EVENTS FOR CROP BOX
@@ -678,4 +718,6 @@ window.addEventListener('DOMContentLoaded', () => {
     elements.applyBtn.disabled = true;
     elements.downloadBtn.disabled = true;
     elements.resetBtn.disabled = true;
+    document.getElementById('save-to-profile-btn').disabled = true;
 });
+

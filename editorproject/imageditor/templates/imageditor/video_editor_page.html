@@ -214,6 +214,27 @@
         background: #e0e0e0;
     }
 
+    .btn-save-profile {
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%) !important;
+        border: none !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .btn-save-profile:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        filter: brightness(1.1);
+    }
+
+    .btn-save-profile:disabled {
+        background: #1e293b !important;
+        opacity: 0.6;
+        transform: none;
+        box-shadow: none;
+    }
+
     /* --- PROGRESS OVERLAY --- */
     #processing-overlay {
         background: rgba(11, 14, 20, 0.9);
@@ -416,7 +437,7 @@
             </div>
         </div>
 
-        <div id="video-wrapper" style="position: relative; display: inline-block;">
+        <div id="video-wrapper" style="position: relative; display: none;">
             <video id="preview-video" controls style="max-width: 100%; display: block;"></video>
 
             <div id="visual-crop-box" class="crop-box-overlay" style="display: none;">
@@ -456,18 +477,25 @@
             <button id="apply-btn" class="btn btn-action btn-apply w-100 mb-2" disabled>
                 <i class="bi bi-magic me-1"></i> Preview Effect
             </button>
+
             <button id="commit-btn" class="btn btn-outline-success w-100 mb-2 py-2 fw-bold d-none">
                 <i class="bi bi-check-lg me-1"></i> Save Changes
             </button>
+
             <button id="reset-btn" class="btn btn-action btn-outline-light w-100 mb-2 opacity-50" disabled>
                 <i class="bi bi-arrow-counterclockwise me-1"></i> Reset to Original
             </button>
+
+            <button id="save-to-profile-btn" class="btn btn-action btn-save-profile w-100 mb-2" disabled>
+                <i class="bi bi-cloud-upload-fill me-1"></i> Save to Profile
+            </button>
+
             <hr class="my-2">
+
             <button id="download-btn" class="btn btn-action btn-download w-100" disabled>
                 <i class="bi bi-download me-1"></i> Download Result
             </button>
         </div>
-    </div>
 </div>
 <script>
     window.EditorConfig = {
@@ -478,7 +506,8 @@
             status: "/api/task-status/", // Base path for the task ID
             process: "{% url 'process_video' %}",
             reset: "{% url 'reset_video_state' %}",
-            download: "{% url 'download_video' %}"
+            download: "{% url 'download_video' %}",
+            saveToProfile: "/api/save-to-profile/"
         },
         tools: JSON.parse('{{ js_editor_tools|safe }}')
     };

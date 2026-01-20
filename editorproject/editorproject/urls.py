@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/process-video/', editor_views.process_video, name='process_video'), # Fixes the NoReverseMatch
     path('api/reset-video/', editor_views.reset_video_state, name='reset_video_state'), # Fixes the NoReverseMatch
     path('api/generate-ai-image/', editor_views.generate_ai_image, name='generate_ai_image'),
+    path('api/save-to-profile/', editor_views.save_to_profile, name='save_to_profile'),
 
     path("register/", editor_views.register, name="register"),
     path("login/", editor_views.login_request, name="login"),

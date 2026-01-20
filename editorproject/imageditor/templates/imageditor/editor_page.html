@@ -91,6 +91,7 @@
             <button id="apply-button" class="apply-btn" disabled>Apply Changes</button>
             <button id="reset-button" class="reset-btn" disabled>Reset Preview</button>
             <button id="download-button" class="download-btn" disabled>Download Image</button>
+            <button id="save-to-profile-button" class="save-to-profile-btn" disabled>Save to profile</button>
             <button id="ai-editor-button" class="ai-editor-btn" disabled>AI Editor</button>
         </div>
     </div>
@@ -1951,6 +1952,7 @@
                 previewFilePath = data.preview_file_path;
                 applyButton.disabled = false;
 
+
                 // Update dimensions if crop tool returned new dimensions
                 if (currentToolKey === 'crop' && data.new_width && data.new_height) {
                     // Note: Don't update currentImageWidth/Height yet - only on Apply
@@ -2024,6 +2026,8 @@
 
                 if (data.success) {
                     previewFilePath = data.preview_file_path;
+
+
 
                     // Copy preview to working
                     const copyFormData = new FormData();
@@ -2365,6 +2369,10 @@
 
                 alert("Changes successfully applied to the working copy.");
                 applyButton.disabled = true; // Keep disabled for other tools
+                document.getElementById('save-to-profile-button').disabled = false;
+                    // Optionally reset button text if it was changed to "Saved" previously
+                const saveBtn = document.getElementById('save-to-profile-button');
+                saveBtn.innerHTML = `<i class="bi bi-cloud-upload-fill me-1"></i> Save to Profile`;
             } else {
                 alert('Error: ' + data.error);
             }
@@ -2488,6 +2496,9 @@
         }
     });
 
+
+
+
     // AI Editor Button - Transfer image to AI page
     aiEditorButton.addEventListener('click', () => {
         if (originalFilePath && workingFilePath && previewFilePath) {
@@ -2550,6 +2561,42 @@
             handleInitialUpload(file);
         }
     }, false);
+
+// Logic for Saving to Cloudinary/Profile
+document.getElementById('save-to-profile-button').addEventListener('click', async function() {
+    const btn = this;
+    const originalContent = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Saving...`;
+
+    const formData = new FormData();
+    // 'workingFile' is your state variable tracking the current video path
+    formData.append('working_file_path', workingFilePath);
+    formData.append('media_type', 'image');
+
+    try {
+        const res = await fetch('/api/save-to-profile/', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': csrftoken }
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Saved!`;
+            btn.classList.replace('btn-save-profile', 'btn-success');
+        } else {
+            alert("Error: " + data.error);
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+        console.error(err);
+    }
+});
 
 </script>
 </body>

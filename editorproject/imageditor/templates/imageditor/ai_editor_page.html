@@ -68,6 +68,11 @@
                         <i class="bi bi-send-fill"></i>
                         <span>Generate</span>
                     </button>
+
+                    <button id="save-btn"  class="btn-save-profile" {% if not has_image or not gemini_available %}disabled{% endif %}>
+                        <i class="bi bi-send-fill"></i>
+                        <span>Save to profile</span>
+                    </button>
                 </div>
 
                 {% if not gemini_available %}
@@ -179,6 +184,10 @@
 
                     // Show success briefly
                     showSuccess('Image generated successfully!');
+                    document.getElementById('save-btn').disabled = false;
+                    // Optionally reset button text if it was changed to "Saved" previously
+                    const saveBtn = document.getElementById('save-btn');
+                    saveBtn.innerHTML = `<i class="bi bi-cloud-upload-fill me-1"></i> Save to Profile`;
                 } else {
                     showError(data.error || 'Failed to generate image.');
                 }
@@ -208,6 +217,42 @@
             }
             promptInput.value = '';
             hideError();
+        });
+
+        // Logic for Saving to Cloudinary/Profile
+        document.getElementById('save-btn').addEventListener('click', async function() {
+            const btn = this;
+            const originalContent = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Saving...`;
+
+            const formData = new FormData();
+            // 'workingFile' is your state variable tracking the current video path
+            formData.append('working_file_path', currentImagePath);
+            formData.append('media_type', 'image');
+
+            try {
+                const res = await fetch('/api/save-to-profile/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': csrftoken }
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Saved!`;
+                    btn.classList.replace('btn-save-profile', 'btn-success');
+                } else {
+                    alert("Error: " + data.error);
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                console.error(err);
+            }
         });
 
         // Enter key to send (Shift+Enter for new line)
