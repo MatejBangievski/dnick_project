@@ -1,0 +1,11 @@
+Django>=5.0
+python-dotenv
+cloudinary
+django-cloudinary-storage
+Pillow
+moviepy
+google-genai
+celery
+redis
+requests
+
