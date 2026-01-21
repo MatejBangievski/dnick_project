@@ -49,10 +49,13 @@ FONTS = {
     "Lucida": ["Lucida Sans.ttf", "Lucida Console.ttf", "lucon.ttf"],
     "Rockwell": ["Rockwell.ttf", "rock.ttf"],
     "Consolas": ["Consolas.ttf", "consola.ttf"],
+    "Times": ["Times New Roman.ttf", "times.ttf", "Times.ttf"],
+    "Courier": ["Courier New.ttf", "cour.ttf", "Courier.ttf"],
+    "Trebuchet": ["Trebuchet MS.ttf", "trebuc.ttf", "TrebuchetMS.ttf"],
 }
 
 FALLBACKS = ["DejaVuSans.ttf", "LiberationSans-Regular.ttf", "Arial.ttf", "arial.ttf"]
-OUTPUT_DIR = "resources/font_previews"
+OUTPUT_DIR = "editorproject/media/font_previews"
 IMAGE_SIZE = 120
 FONT_SIZE = 48
 BG_COLOR = (255, 255, 255)
